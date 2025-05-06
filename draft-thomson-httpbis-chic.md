@@ -79,7 +79,7 @@ or performance-sensitive applications like HTML rendering.
 
 The way this works is by splitting a document into chunks,
 or chiclets,
-each comprising 
+each comprising
 a length,
 some number of bytes of content, and
 a hash for the next chiclet.
