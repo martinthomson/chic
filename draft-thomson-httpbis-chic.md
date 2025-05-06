@@ -9,7 +9,7 @@ number:
 date:
 consensus: true
 v: 3
-area: "Web and Internet Transport"
+area: ""
 workgroup: "HTTP"
 keyword:
  - next generation
@@ -17,7 +17,7 @@ keyword:
  - sparkling distributed ledger
 venue:
   group: "HTTP"
-  type: "Working Group"
+  type: ""
   mail: "ietf-http-wg@w3.org"
   arch: "https://lists.w3.org/Archives/Public/ietf-http-wg/"
   github: "martinthomson/chic"
