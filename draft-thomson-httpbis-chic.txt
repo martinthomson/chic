@@ -3,17 +3,18 @@
 
 
 WG Working Group                                              Y. N. Here
-Internet-Draft                                    Your Organization Here
-Intended status: Informational                                6 May 2025
+Internet-Draft                                                   Mozilla
+Intended status: Standards Track                              6 May 2025
 Expires: 7 November 2025
 
 
-                           TODO - Your title
+                 Chained Hash Integrity Coding for HTTP
                   draft-todo-yourname-protocol-latest
 
 Abstract
 
-   TODO Abstract
+   This describes a content-coding for HTTP that enables progressive
+   processing of content, without sacrificing integrity.
 
 About This Document
 
@@ -66,15 +67,35 @@ Table of Contents
 
    1.  Introduction
    2.  Conventions and Definitions
-   3.  Security Considerations
-   4.  IANA Considerations
-   5.  Normative References
+   3.  Length Constraints
+   4.  Security Considerations
+   5.  IANA Considerations
+   6.  Normative References
    Acknowledgments
    Author's Address
 
 1.  Introduction
 
-   TODO Introduction
+   Hash-based integrity is a powerful tool for ensuring that content
+   matches expectations.  Hashes are often the basis of digital
+   signature schemes that can authenticate content, or at least provide
+   verifiable proof of authorization.
+
+   The main challenge with hashes is that the entirety of a piece of
+   content needs to be acquired in order to validate the hash.  This
+   document describes a method of hash generation that can be verified
+   progressively.  This enables systems that depend on progressive
+   processing, such as streaming processing of a long sequence of
+   records, or performance-sensitive applications like HTML rendering.
+
+   The way this works is by splitting a document into chunks, or
+   chiclets, each comprising a length, some number of bytes of content,
+   and a hash for the next chiclet.
+
+   TODO
+
+   The cost of this scheme is that there is a small amount of overhead
+   that is interspersed with the content bytes.
 
 2.  Conventions and Definitions
 
@@ -84,15 +105,25 @@ Table of Contents
    BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
    capitals, as shown here.
 
-3.  Security Considerations
+   This document uses the varint encoding and presentation language
+   developed for QUIC [QUIC].
+
+3.  Length Constraints
+
+4.  Security Considerations
 
    TODO Security
 
-4.  IANA Considerations
+5.  IANA Considerations
 
    This document has no IANA actions.
 
-5.  Normative References
+6.  Normative References
+
+   [QUIC]     Iyengar, J., Ed. and M. Thomson, Ed., "QUIC: A UDP-Based
+              Multiplexed and Secure Transport", RFC 9000,
+              DOI 10.17487/RFC9000, May 2021,
+              <https://www.rfc-editor.org/rfc/rfc9000>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -110,5 +141,5 @@ Acknowledgments
 Author's Address
 
    Your Name Here
-   Your Organization Here
+   Mozilla
    Email: your.email@example.com
