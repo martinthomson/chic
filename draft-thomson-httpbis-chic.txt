@@ -115,6 +115,8 @@ Table of Contents
    | Len |  Content   |  Hash  | Len |  Content   |  Hash  | ...
    +-----+----~~~~----+--------+-----+----~~~~----+--------+
 
+   <-- First byte                                 Last byte -->
+
                         Figure 1: Overview of Format
 
    The hash of the entirety of the content can thereby be represented by
