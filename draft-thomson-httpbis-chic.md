@@ -85,6 +85,8 @@ This enables progressive processing of content,
 providing strong integrity for all content bytes,
 provided that each chiclet is only released after being validated;
 see {{consumption}}.
+That can reduce latency - or perceived latency -
+for applications that are sensitive to delays.
 
 The cost of this scheme is that there is a small amount of overhead.
 Additional bytes for the hash and length fields
@@ -249,8 +251,12 @@ significant quality improvements can be realized;
 aligning chiclets to those points might enable better incremental processing.
 
 The fact that content needs to be processed in reverse order
-makes this format less ill-suited to situations where content is streamed.
-It is therefore best for static resources
+makes this format ill-suited to situations
+where content of arbitrary length is streamed.
+It is also poorly suited to use with dynamically-generated content,
+especially where content is latency sensitive,
+because it requires two processing passes to produce the format.
+It is therefore best suited to static resources
 where the format can be pregenerated and saved.
 
 
@@ -277,6 +283,8 @@ the available content length
 by an additional 40 bytes to 2<sup>61</sup>-41;
 the final chiclet might reduce that by as little as one byte
 to 2<sup>61</sup>-2 bytes of content.
+Of course, there is little value in having such large chiclets,
+which directly act against the goal of incremental processing.
 
 An abusive implementation might also seek to generate wasteful work
 on receipients
