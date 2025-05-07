@@ -1051,7 +1051,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Thomson</td>
-<td class="center">Expires 7 November 2025</td>
+<td class="center">Expires 8 November 2025</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1064,12 +1064,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-thomson-httpbis-chic-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-05-06" class="published">6 May 2025</time>
+<time datetime="2025-05-07" class="published">7 May 2025</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2025-11-07">7 November 2025</time></dd>
+<dd class="expires"><time datetime="2025-11-08">8 November 2025</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
@@ -1119,7 +1119,7 @@ without sacrificing integrity.<a href="#section-abstract-1" class="pilcrow">¶</
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 7 November 2025.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 8 November 2025.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1155,7 +1155,7 @@ without sacrificing integrity.<a href="#section-abstract-1" class="pilcrow">¶</
             <p id="section-toc.1-1.2.1" class="keepWithNext"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-conventions-and-definitions" class="internal xref">Conventions and Definitions</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
-            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-chained-hash-integrity-enco" class="internal xref">Chained Hash Integrity Encoding</a></p>
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-chained-hash-integrity-form" class="internal xref">Chained Hash Integrity Format</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
                 <p id="section-toc.1-1.3.2.1.1" class="keepWithNext"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-format-description" class="internal xref">Format Description</a></p>
@@ -1200,7 +1200,15 @@ without sacrificing integrity.<a href="#section-abstract-1" class="pilcrow">¶</
             <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
-            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
             <p id="section-toc.1-1.8.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
@@ -1239,51 +1247,65 @@ This is shown in <a href="#f-overview" class="auto internal xref">Figure 1</a>.<
 <figure id="figure-1">
         <div id="section-1-4.1">
           <div class="alignLeft art-svg artwork" id="section-1-4.1.1">
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="208" width="520" viewBox="0 0 520 208" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
-              <path d="M 8,32 L 8,64" fill="none" stroke="black"></path>
-              <path d="M 56,32 L 56,64" fill="none" stroke="black"></path>
-              <path d="M 160,32 L 160,64" fill="none" stroke="black"></path>
-              <path d="M 216,32 L 216,64" fill="none" stroke="black"></path>
-              <path d="M 216,128 L 216,176" fill="none" stroke="black"></path>
-              <path d="M 264,144 L 264,176" fill="none" stroke="black"></path>
-              <path d="M 312,64 L 312,72" fill="none" stroke="black"></path>
-              <path d="M 368,144 L 368,176" fill="none" stroke="black"></path>
-              <path d="M 424,128 L 424,176" fill="none" stroke="black"></path>
-              <path d="M 472,176 L 472,184" fill="none" stroke="black"></path>
-              <path d="M 8,32 L 92,32" fill="none" stroke="black"></path>
-              <path d="M 92,32 Q 94,28.8 96,32 Q 98,35.2 100,32 Q 102,28.8 104,32 Q 106,35.2 108,32 Q 110,28.8 112,32 Q 114,35.2 116,32 Q 118,28.8 120,32 Q 122,35.2 124,32" fill="none" stroke="black"></path>
-              <path d="M 124,32 L 216,32" fill="none" stroke="black"></path>
-              <path d="M 224,48 L 296,48" fill="none" stroke="black"></path>
-              <path d="M 8,64 L 92,64" fill="none" stroke="black"></path>
-              <path d="M 92,64 Q 94,60.8 96,64 Q 98,67.2 100,64 Q 102,60.8 104,64 Q 106,67.2 108,64 Q 110,60.8 112,64 Q 114,67.2 116,64 Q 118,60.8 120,64 Q 122,67.2 124,64" fill="none" stroke="black"></path>
-              <path d="M 124,64 L 216,64" fill="none" stroke="black"></path>
-              <path d="M 232,112 L 296,112" fill="none" stroke="black"></path>
-              <path d="M 328,112 L 408,112" fill="none" stroke="black"></path>
-              <path d="M 216,144 L 300,144" fill="none" stroke="black"></path>
-              <path d="M 300,144 Q 302,140.8 304,144 Q 306,147.2 308,144 Q 310,140.8 312,144 Q 314,147.2 316,144 Q 318,140.8 320,144 Q 322,147.2 324,144 Q 326,140.8 328,144 Q 330,147.2 332,144" fill="none" stroke="black"></path>
-              <path d="M 332,144 L 424,144" fill="none" stroke="black"></path>
-              <path d="M 432,160 L 456,160" fill="none" stroke="black"></path>
-              <path d="M 216,176 L 300,176" fill="none" stroke="black"></path>
-              <path d="M 300,176 Q 302,172.8 304,176 Q 306,179.2 308,176 Q 310,172.8 312,176 Q 314,179.2 316,176 Q 318,172.8 320,176 Q 322,179.2 324,176 Q 326,172.8 328,176 Q 330,179.2 332,176" fill="none" stroke="black"></path>
-              <path d="M 332,176 L 424,176" fill="none" stroke="black"></path>
-              <path d="M 316,88 L 328,112" fill="none" stroke="black"></path>
-              <path d="M 296,112 L 308,88" fill="none" stroke="black"></path>
-              <path d="M 296,48 C 304.83064,48 312,55.16936 312,64" fill="none" stroke="black"></path>
-              <path d="M 232,112 C 223.16936,112 216,119.16936 216,128" fill="none" stroke="black"></path>
-              <path d="M 408,112 C 416.83064,112 424,119.16936 424,128" fill="none" stroke="black"></path>
-              <path d="M 456,160 C 464.83064,160 472,167.16936 472,176" fill="none" stroke="black"></path>
-              <polygon class="arrowhead" points="440,160 428,154.4 428,165.6" fill="black" transform="rotate(180,432,160)"></polygon>
-              <polygon class="arrowhead" points="232,48 220,42.4 220,53.6" fill="black" transform="rotate(180,224,48)"></polygon>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="176" width="496" viewBox="0 0 496 176" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
+              <path d="M 8,112 L 8,160" fill="none" stroke="black"></path>
+              <path d="M 56,128 L 56,160" fill="none" stroke="black"></path>
+              <path d="M 104,48 L 104,56" fill="none" stroke="black"></path>
+              <path d="M 160,128 L 160,160" fill="none" stroke="black"></path>
+              <path d="M 192,48 L 192,88" fill="none" stroke="black"></path>
+              <path d="M 192,104 L 192,120" fill="none" stroke="black"></path>
+              <path d="M 232,112 L 232,160" fill="none" stroke="black"></path>
+              <path d="M 280,128 L 280,160" fill="none" stroke="black"></path>
+              <path d="M 328,48 L 328,56" fill="none" stroke="black"></path>
+              <path d="M 384,128 L 384,160" fill="none" stroke="black"></path>
+              <path d="M 416,48 L 416,88" fill="none" stroke="black"></path>
+              <path d="M 416,104 L 416,120" fill="none" stroke="black"></path>
+              <path d="M 456,112 L 456,160" fill="none" stroke="black"></path>
+              <path d="M 64,32 L 88,32" fill="none" stroke="black"></path>
+              <path d="M 208,32 L 312,32" fill="none" stroke="black"></path>
+              <path d="M 432,32 L 456,32" fill="none" stroke="black"></path>
+              <path d="M 24,96 L 88,96" fill="none" stroke="black"></path>
+              <path d="M 120,96 L 216,96" fill="none" stroke="black"></path>
+              <path d="M 248,96 L 312,96" fill="none" stroke="black"></path>
+              <path d="M 344,96 L 440,96" fill="none" stroke="black"></path>
+              <path d="M 8,128 L 92,128" fill="none" stroke="black"></path>
+              <path d="M 92,128 Q 94,124.8 96,128 Q 98,131.2 100,128 Q 102,124.8 104,128 Q 106,131.2 108,128 Q 110,124.8 112,128 Q 114,131.2 116,128 Q 118,124.8 120,128 Q 122,131.2 124,128" fill="none" stroke="black"></path>
+              <path d="M 124,128 L 316,128" fill="none" stroke="black"></path>
+              <path d="M 316,128 Q 318,124.8 320,128 Q 322,131.2 324,128 Q 326,124.8 328,128 Q 330,131.2 332,128 Q 334,124.8 336,128 Q 338,131.2 340,128 Q 342,124.8 344,128 Q 346,131.2 348,128" fill="none" stroke="black"></path>
+              <path d="M 348,128 L 456,128" fill="none" stroke="black"></path>
+              <path d="M 8,160 L 92,160" fill="none" stroke="black"></path>
+              <path d="M 92,160 Q 94,156.8 96,160 Q 98,163.2 100,160 Q 102,156.8 104,160 Q 106,163.2 108,160 Q 110,156.8 112,160 Q 114,163.2 116,160 Q 118,156.8 120,160 Q 122,163.2 124,160" fill="none" stroke="black"></path>
+              <path d="M 124,160 L 316,160" fill="none" stroke="black"></path>
+              <path d="M 316,160 Q 318,156.8 320,160 Q 322,163.2 324,160 Q 326,156.8 328,160 Q 330,163.2 332,160 Q 334,156.8 336,160 Q 338,163.2 340,160 Q 342,156.8 344,160 Q 346,163.2 348,160" fill="none" stroke="black"></path>
+              <path d="M 348,160 L 456,160" fill="none" stroke="black"></path>
+              <path d="M 108,72 L 120,96" fill="none" stroke="black"></path>
+              <path d="M 332,72 L 344,96" fill="none" stroke="black"></path>
+              <path d="M 88,96 L 100,72" fill="none" stroke="black"></path>
+              <path d="M 312,96 L 324,72" fill="none" stroke="black"></path>
+              <path d="M 88,32 C 96.83064,32 104,39.16936 104,48" fill="none" stroke="black"></path>
+              <path d="M 208,32 C 199.16936,32 192,39.16936 192,48" fill="none" stroke="black"></path>
+              <path d="M 312,32 C 320.83064,32 328,39.16936 328,48" fill="none" stroke="black"></path>
+              <path d="M 432,32 C 423.16936,32 416,39.16936 416,48" fill="none" stroke="black"></path>
+              <path d="M 24,96 C 15.16936,96 8,103.16936 8,112" fill="none" stroke="black"></path>
+              <path d="M 216,96 C 224.83064,96 232,103.16936 232,112" fill="none" stroke="black"></path>
+              <path d="M 248,96 C 239.16936,96 232,103.16936 232,112" fill="none" stroke="black"></path>
+              <path d="M 440,96 C 448.83064,96 456,103.16936 456,112" fill="none" stroke="black"></path>
+              <polygon class="arrowhead" points="424,120 412,114.4 412,125.6" fill="black" transform="rotate(90,416,120)"></polygon>
+              <path class="jump" d="M 416,104 C 422,104 422,88 416,88" fill="none" stroke="black"></path>
+              <polygon class="arrowhead" points="200,120 188,114.4 188,125.6" fill="black" transform="rotate(90,192,120)"></polygon>
+              <path class="jump" d="M 192,104 C 198,104 198,88 192,88" fill="none" stroke="black"></path>
+              <polygon class="arrowhead" points="72,32 60,26.4 60,37.6" fill="black" transform="rotate(180,64,32)"></polygon>
               <g class="text">
-                <text x="32" y="52">Len</text>
-                <text x="104" y="52">Content</text>
-                <text x="188" y="52">Hash</text>
-                <text x="312" y="84">H()</text>
-                <text x="240" y="164">Len</text>
-                <text x="312" y="164">Content</text>
-                <text x="396" y="164">Hash</text>
-                <text x="472" y="196">H()</text>
-                <text x="504" y="196">...</text>
+                <text x="480" y="36">...</text>
+                <text x="104" y="68">H()</text>
+                <text x="328" y="68">H()</text>
+                <text x="32" y="148">Len</text>
+                <text x="104" y="148">Content</text>
+                <text x="196" y="148">Hash</text>
+                <text x="256" y="148">Len</text>
+                <text x="328" y="148">Content</text>
+                <text x="420" y="148">Hash</text>
+                <text x="480" y="148">...</text>
               </g>
             </svg><a href="#section-1-4.1.1" class="pilcrow">¶</a>
 </div>
@@ -1292,18 +1314,20 @@ This is shown in <a href="#f-overview" class="auto internal xref">Figure 1</a>.<
 <a href="#name-overview-of-format" class="selfRef">Overview of Format</a>
         </figcaption></figure>
 </div>
-<p id="section-1-5">This enables efficient progressive processing
-of content,
-providing strong integrity for all bytes,
-as long as each chiclet is only released after being validated;
-see <a href="#consumption" class="auto internal xref">Section 3.2</a>.<a href="#section-1-5" class="pilcrow">¶</a></p>
-<p id="section-1-6">The cost of this scheme is that there is a small amount of overhead.
-Additional bytes for the hash and length fields are interspersed with content.
-The relative cost of that overhead depends on the size of each chunk;
-a chunk size of 4k adds an 0.83% overhead.<a href="#section-1-6" class="pilcrow">¶</a></p>
-<p id="section-1-7">Constructing content in this form
+<p id="section-1-5">The hash of the entirety of the content
+can thereby be represented by the hash of the first chiclet.<a href="#section-1-5" class="pilcrow">¶</a></p>
+<p id="section-1-6">This enables progressive processing of content,
+providing strong integrity for all content bytes,
+provided that each chiclet is only released after being validated;
+see <a href="#consumption" class="auto internal xref">Section 3.2</a>.<a href="#section-1-6" class="pilcrow">¶</a></p>
+<p id="section-1-7">The cost of this scheme is that there is a small amount of overhead.
+Additional bytes for the hash and length fields
+are interspersed with content bytes.
+The relative cost of that overhead depends on the size of chiclets;
+an average chunk size of 4k adds an 0.83% overhead.<a href="#section-1-7" class="pilcrow">¶</a></p>
+<p id="section-1-8">Constructing content in this form
 requires that the entirety of the content is available;
-see <a href="#construction" class="auto internal xref">Section 3.3</a>.<a href="#section-1-7" class="pilcrow">¶</a></p>
+see <a href="#construction" class="auto internal xref">Section 3.3</a>.<a href="#section-1-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="conventions-and-definitions">
@@ -1322,8 +1346,8 @@ developed for QUIC <span>[<a href="#QUIC" class="cite xref">QUIC</a>]</span>.<a 
 </div>
 <div id="format">
 <section id="section-3">
-      <h2 id="name-chained-hash-integrity-enco">
-<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-chained-hash-integrity-enco" class="section-name selfRef">Chained Hash Integrity Encoding</a>
+      <h2 id="name-chained-hash-integrity-form">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-chained-hash-integrity-form" class="section-name selfRef">Chained Hash Integrity Format</a>
       </h2>
 <p id="section-3-1">Any continuous stream of bytes can be turned into
 a stream of variable-length chiclets.
@@ -1333,14 +1357,18 @@ This format allows for progressive validation of the integrity of content.<a hre
         <h3 id="name-format-description">
 <a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-format-description" class="section-name selfRef">Format Description</a>
         </h3>
-<p id="section-3.1-1">A non-final chiclet comprises a non-zero length,
+<p id="section-3.1-1">The format comprises zero or more non-final chiclets and a final chiclet
+(which can be the first).
+Content bytes are therefore interspersed with framing and integrity bytes,
+increasing the size of the content.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1-2">A non-final chiclet comprises a non-zero length (for framing),
 between 1 and 2<sup>61</sup>-1 bytes (inclusive) of content (see <a href="#length" class="auto internal xref">Section 3.4</a>),
-and a 32 byte hash.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
-<p id="section-3.1-2">Lengths are encoded using the variable-length integer format
+and a 32 byte hash (that is, integrity bytes).<a href="#section-3.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.1-3">Lengths are encoded using the variable-length integer format
 from <span><a href="https://rfc-editor.org/rfc/rfc9000#section-16" class="relref">Section 16</a> of [<a href="#QUIC" class="cite xref">QUIC</a>]</span>.
 The hash is the output of the SHA-256 algorithm <span>[<a href="#SHA" class="cite xref">SHA</a>]</span>
-that has processed input of the chiclet that follows.<a href="#section-3.1-2" class="pilcrow">¶</a></p>
-<p id="section-3.1-3">The final chiclet includes a zero-valued length field,
+that has processed input of the chiclet that follows.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
+<p id="section-3.1-4">The final chiclet includes a zero-valued length field,
 any number of bytes of content up to 2<sup>61</sup> bytes, and
 no hash.
 The final chiclet ends when content ends,
@@ -1348,15 +1376,15 @@ which means that this format can only be used
 where there is a distinct end to the protected content.
 That might mean the end of a file,
 the end of a stream, or
-the end of an HTTP message; see <a href="#http" class="auto internal xref">Section 4</a>.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
-<p id="section-3.1-4">The hash value that is computed from the very first chiclet
+the end of an HTTP message; see <a href="#http" class="auto internal xref">Section 4</a>.<a href="#section-3.1-4" class="pilcrow">¶</a></p>
+<p id="section-3.1-5">The hash value that is computed from the very first chiclet
 is not written to the output.
 Instead, it needs to be carried outside the content;
-see <a href="#digest" class="auto internal xref">Section 4.2</a> for one method of indicating this value.<a href="#section-3.1-4" class="pilcrow">¶</a></p>
-<p id="section-3.1-5">The format is illustrated in <a href="#f-layout" class="auto internal xref">Figure 2</a>.<a href="#section-3.1-5" class="pilcrow">¶</a></p>
+see <a href="#digest" class="auto internal xref">Section 4.2</a> for one method of indicating this value.<a href="#section-3.1-5" class="pilcrow">¶</a></p>
+<p id="section-3.1-6">The format is illustrated in <a href="#f-layout" class="auto internal xref">Figure 2</a>.<a href="#section-3.1-6" class="pilcrow">¶</a></p>
 <span id="name-layout-of-content-encoding"></span><div id="f-layout">
 <figure id="figure-2">
-          <div class="alignLeft art-text artwork" id="section-3.1-6.1">
+          <div class="alignLeft art-text artwork" id="section-3.1-7.1">
 <pre>
 Chic Content-Coding {
   Chiclet (i) ...,
@@ -1379,8 +1407,8 @@ Final Chiclet {
 <a href="#name-layout-of-content-encoding" class="selfRef">Layout of Content Encoding</a>
           </figcaption></figure>
 </div>
-<p id="section-3.1-7">The format uses SHA-256 exclusively <span>[<a href="#SHA" class="cite xref">SHA</a>]</span>;
-see <a href="#hash" class="auto internal xref">Section 5.1</a> for details.<a href="#section-3.1-7" class="pilcrow">¶</a></p>
+<p id="section-3.1-8">The format uses SHA-256 for integrity <span>[<a href="#SHA" class="cite xref">SHA</a>]</span>;
+see <a href="#hash" class="auto internal xref">Section 5.1</a> for details.<a href="#section-3.1-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="consumption">
@@ -1435,10 +1463,12 @@ Otherwise, end the process successfully.<a href="#section-3.2-4.6.1" class="pilc
 according to the value that was provided.<a href="#section-3.2-5" class="pilcrow">¶</a></p>
 <p id="section-3.2-6">To account for variations in how chiclets are constructed,
 multiple hash values might be provided.
-An entity that wishes to validate against any of the provided hashes
+An entity that wishes to validate against any value
+from a set of provided hash values
 matches the hash of the first chiclet against the provided set.
 Once the first chiclet is processed,
-subsequent chiclets are validated against the preceding hash.<a href="#section-3.2-6" class="pilcrow">¶</a></p>
+subsequent chiclets are validated against the single hash
+from the preceding chiclet.<a href="#section-3.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="construction">
@@ -1559,6 +1589,10 @@ but not necessarily the exact sequence of bytes that appear in the message.
 For example, another content coding -
 such as a compression coding -
 could be applied after the <code>chi</code> coding.<a href="#section-4.2-4" class="pilcrow">¶</a></p>
+<p id="section-4.2-5">Note that this format does not allow for multiple values
+of the <code>chi</code> hash algorithm.
+Only the last value is visible to a recipient;
+see <span><a href="https://rfc-editor.org/rfc/rfc9651#section-4.2.2" class="relref">Section 4.2.2</a> of [<a href="#RFC9651" class="cite xref">RFC9651</a>]</span>.<a href="#section-4.2-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1570,9 +1604,9 @@ could be applied after the <code>chi</code> coding.<a href="#section-4.2-4" clas
       </h2>
 <p id="section-5-1">The security properties of this feature is intended to be
 broadly equivalent to simple hashing of content,
-with the added feature whereby a recipient can use parts of content
+with the added condition that a recipient can use parts of content
 prior to receiving every byte.<a href="#section-5-1" class="pilcrow">¶</a></p>
-<p id="section-5-2">This depends on the hash function chosen (<a href="#hash" class="auto internal xref">Section 5.1</a>),
+<p id="section-5-2">The integrity property depends on the hash function chosen (<a href="#hash" class="auto internal xref">Section 5.1</a>),
 but exposes recipients to a risk of truncation (<a href="#truncation" class="auto internal xref">Section 5.2</a>).
 There is also a resource exhaustion exposure,
 particularly for recipients with limited resources (<a href="#dos" class="auto internal xref">Section 5.3</a>).<a href="#section-5-2" class="pilcrow">¶</a></p>
@@ -1603,6 +1637,11 @@ content might be released to an application for processing,
 with no guarantee that subsequent chiclets will be delivered.
 Any application that uses this format
 therefore needs to be robust in the event that content is truncated.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">The final chiclet contains a zero-length prefix.
+That prefix is hashed,
+ensuring that the final chiclet is easily distinguished
+from any non-final chiclets.
+This guarantees that truncation can be detected.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="dos">
@@ -1622,40 +1661,60 @@ see <a href="#length" class="auto internal xref">Section 3.4</a> for discussion 
       <h2 id="name-iana-considerations">
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
       </h2>
-<p id="section-6-1">This document has no IANA actions.<a href="#section-6-1" class="pilcrow">¶</a></p>
+<p id="section-6-1">TODO: register both <code>chi</code> things.<a href="#section-6-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="sec-normative-references">
+<div id="sec-combined-references">
 <section id="section-7">
-      <h2 id="name-normative-references">
-<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      <h2 id="name-references">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-references" class="section-name selfRef">References</a>
       </h2>
+<div id="sec-normative-references">
+<section id="section-7.1">
+        <h3 id="name-normative-references">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
 <dl class="references">
 <dt id="DIGEST">[DIGEST]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Polli, R.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Digest Fields"</span>, <span class="seriesInfo">RFC 9530</span>, <span class="seriesInfo">DOI 10.17487/RFC9530</span>, <time datetime="2024-02" class="refDate">February 2024</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9530">https://www.rfc-editor.org/rfc/rfc9530</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="HTTP">[HTTP]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Fielding, R., Ed.</span>, <span class="refAuthor">Nottingham, M., Ed.</span>, and <span class="refAuthor">J. Reschke, Ed.</span>, <span class="refTitle">"HTTP Semantics"</span>, <span class="seriesInfo">STD 97</span>, <span class="seriesInfo">RFC 9110</span>, <span class="seriesInfo">DOI 10.17487/RFC9110</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9110">https://www.rfc-editor.org/rfc/rfc9110</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QUIC">[QUIC]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="seriesInfo">RFC 9000</span>, <span class="seriesInfo">DOI 10.17487/RFC9000</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9000">https://www.rfc-editor.org/rfc/rfc9000</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="SHA">[SHA]</dt>
-    <dd>
+      <dd>
 <span class="refAuthor">Eastlake 3rd, D.</span> and <span class="refAuthor">T. Hansen</span>, <span class="refTitle">"US Secure Hash Algorithms (SHA and SHA-based HMAC and HKDF)"</span>, <span class="seriesInfo">RFC 6234</span>, <span class="seriesInfo">DOI 10.17487/RFC6234</span>, <time datetime="2011-05" class="refDate">May 2011</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc6234">https://www.rfc-editor.org/rfc/rfc6234</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
+</section>
+</div>
+<div id="sec-informative-references">
+<section id="section-7.2">
+        <h3 id="name-informative-references">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC9651">[RFC9651]</dt>
+      <dd>
+<span class="refAuthor">Nottingham, M.</span> and <span class="refAuthor">P. Kamp</span>, <span class="refTitle">"Structured Field Values for HTTP"</span>, <span class="seriesInfo">RFC 9651</span>, <span class="seriesInfo">DOI 10.17487/RFC9651</span>, <time datetime="2024-09" class="refDate">September 2024</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9651">https://www.rfc-editor.org/rfc/rfc9651</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
 </section>
 </div>
 <div id="acknowledgments">

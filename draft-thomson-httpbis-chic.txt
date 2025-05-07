@@ -4,8 +4,8 @@
 
 HTTP                                                          M. Thomson
 Internet-Draft                                                   Mozilla
-Intended status: Standards Track                              6 May 2025
-Expires: 7 November 2025
+Intended status: Standards Track                              7 May 2025
+Expires: 8 November 2025
 
 
                  Chained Hash Integrity Coding for HTTP
@@ -47,7 +47,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 7 November 2025.
+   This Internet-Draft will expire on 8 November 2025.
 
 Copyright Notice
 
@@ -67,7 +67,7 @@ Table of Contents
 
    1.  Introduction
    2.  Conventions and Definitions
-   3.  Chained Hash Integrity Encoding
+   3.  Chained Hash Integrity Format
      3.1.  Format Description
      3.2.  Consumption and Validation
      3.3.  Construction
@@ -80,7 +80,9 @@ Table of Contents
      5.2.  Truncation
      5.3.  Chiclet Size
    6.  IANA Considerations
-   7.  Normative References
+   7.  References
+     7.1.  Normative References
+     7.2.  Informative References
    Acknowledgments
    Author's Address
 
@@ -102,28 +104,29 @@ Table of Contents
    chiclets, each comprising a length, some number of bytes of content,
    and a hash for the next chiclet.  This is shown in Figure 1.
 
-   +-----+----~~~~----+------+
-   | Len |  Content   | Hash |<---------.
-   +-----+----~~~~----+------+           |
-                                        H()
-                                        / \
-                              .--------'   '----------.
-                             |                         |
-                             +-----+----~~~~----+------+
-                             | Len |  Content   | Hash |<---.
-                             +-----+----~~~~----+------+     |
-                                                            H() ...
+          <---.            .--------------.            .---- ...
+               |          |                |          |
+              H()         |               H()         |
+              / \         |               / \         |
+    .--------'   '--------)---. .--------'   '--------)---.
+   |                      v    |                      v    |
+   +-----+----~~~~----+--------+-----+----~~~~----+--------+
+   | Len |  Content   |  Hash  | Len |  Content   |  Hash  | ...
+   +-----+----~~~~----+--------+-----+----~~~~----+--------+
 
                         Figure 1: Overview of Format
 
-   This enables efficient progressive processing of content, providing
-   strong integrity for all bytes, as long as each chiclet is only
+   The hash of the entirety of the content can thereby be represented by
+   the hash of the first chiclet.
+
+   This enables progressive processing of content, providing strong
+   integrity for all content bytes, provided that each chiclet is only
    released after being validated; see Section 3.2.
 
    The cost of this scheme is that there is a small amount of overhead.
    Additional bytes for the hash and length fields are interspersed with
-   content.  The relative cost of that overhead depends on the size of
-   each chunk; a chunk size of 4k adds an 0.83% overhead.
+   content bytes.  The relative cost of that overhead depends on the
+   size of chiclets; an average chunk size of 4k adds an 0.83% overhead.
 
    Constructing content in this form requires that the entirety of the
    content is available; see Section 3.3.
@@ -139,7 +142,7 @@ Table of Contents
    This document uses the varint encoding and presentation language
    developed for QUIC [QUIC].
 
-3.  Chained Hash Integrity Encoding
+3.  Chained Hash Integrity Format
 
    Any continuous stream of bytes can be turned into a stream of
    variable-length chiclets.  This format allows for progressive
@@ -147,8 +150,14 @@ Table of Contents
 
 3.1.  Format Description
 
-   A non-final chiclet comprises a non-zero length, between 1 and 2^61-1
-   bytes (inclusive) of content (see Section 3.4), and a 32 byte hash.
+   The format comprises zero or more non-final chiclets and a final
+   chiclet (which can be the first).  Content bytes are therefore
+   interspersed with framing and integrity bytes, increasing the size of
+   the content.
+
+   A non-final chiclet comprises a non-zero length (for framing),
+   between 1 and 2^61-1 bytes (inclusive) of content (see Section 3.4),
+   and a 32 byte hash (that is, integrity bytes).
 
    Lengths are encoded using the variable-length integer format from
    Section 16 of [QUIC].  The hash is the output of the SHA-256
@@ -185,7 +194,7 @@ Table of Contents
 
                     Figure 2: Layout of Content Encoding
 
-   The format uses SHA-256 exclusively [SHA]; see Section 5.1 for
+   The format uses SHA-256 for integrity [SHA]; see Section 5.1 for
    details.
 
 3.2.  Consumption and Validation
@@ -228,10 +237,10 @@ Table of Contents
 
    To account for variations in how chiclets are constructed, multiple
    hash values might be provided.  An entity that wishes to validate
-   against any of the provided hashes matches the hash of the first
-   chiclet against the provided set.  Once the first chiclet is
-   processed, subsequent chiclets are validated against the preceding
-   hash.
+   against any value from a set of provided hash values matches the hash
+   of the first chiclet against the provided set.  Once the first
+   chiclet is processed, subsequent chiclets are validated against the
+   single hash from the preceding chiclet.
 
 3.3.  Construction
 
@@ -328,17 +337,21 @@ Table of Contents
    content coding - such as a compression coding - could be applied
    after the chi coding.
 
+   Note that this format does not allow for multiple values of the chi
+   hash algorithm.  Only the last value is visible to a recipient; see
+   Section 4.2.2 of [RFC9651].
+
 5.  Security Considerations
 
    The security properties of this feature is intended to be broadly
-   equivalent to simple hashing of content, with the added feature
-   whereby a recipient can use parts of content prior to receiving every
+   equivalent to simple hashing of content, with the added condition
+   that a recipient can use parts of content prior to receiving every
    byte.
 
-   This depends on the hash function chosen (Section 5.1), but exposes
-   recipients to a risk of truncation (Section 5.2).  There is also a
-   resource exhaustion exposure, particularly for recipients with
-   limited resources (Section 5.3).
+   The integrity property depends on the hash function chosen
+   (Section 5.1), but exposes recipients to a risk of truncation
+   (Section 5.2).  There is also a resource exhaustion exposure,
+   particularly for recipients with limited resources (Section 5.3).
 
 5.1.  Hash Choice
 
@@ -360,6 +373,11 @@ Table of Contents
    chiclets will be delivered.  Any application that uses this format
    therefore needs to be robust in the event that content is truncated.
 
+   The final chiclet contains a zero-length prefix.  That prefix is
+   hashed, ensuring that the final chiclet is easily distinguished from
+   any non-final chiclets.  This guarantees that truncation can be
+   detected.
+
 5.3.  Chiclet Size
 
    The requirement to hold an entire chiclet until it is validated
@@ -368,9 +386,11 @@ Table of Contents
 
 6.  IANA Considerations
 
-   This document has no IANA actions.
+   TODO: register both chi things.
 
-7.  Normative References
+7.  References
+
+7.1.  Normative References
 
    [DIGEST]   Polli, R. and L. Pardue, "Digest Fields", RFC 9530,
               DOI 10.17487/RFC9530, February 2024,
@@ -399,6 +419,12 @@ Table of Contents
               (SHA and SHA-based HMAC and HKDF)", RFC 6234,
               DOI 10.17487/RFC6234, May 2011,
               <https://www.rfc-editor.org/rfc/rfc6234>.
+
+7.2.  Informative References
+
+   [RFC9651]  Nottingham, M. and P. Kamp, "Structured Field Values for
+              HTTP", RFC 9651, DOI 10.17487/RFC9651, September 2024,
+              <https://www.rfc-editor.org/rfc/rfc9651>.
 
 Acknowledgments
 
