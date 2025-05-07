@@ -75,6 +75,7 @@ Table of Contents
    4.  HTTP Usage
      4.1.  Content-Coding
      4.2.  Digest Format
+     4.3.  Example
    5.  Security Considerations
      5.1.  Hash Choice
      5.2.  Truncation
@@ -347,6 +348,10 @@ Table of Contents
    Note that this format does not allow for multiple values of the chi
    hash algorithm.  Only the last value is visible to a recipient; see
    Section 4.2.2 of [RFC9651].
+
+4.3.  Example
+
+   TODO
 
 5.  Security Considerations
 
