@@ -349,6 +349,10 @@ of the `chi` hash algorithm.
 Only the last value is visible to a recipient;
 see {{Section 4.2.2 of ?RFC9651}}.
 
+## Example {#example}
+
+TODO
+
 
 # Security Considerations
 
