@@ -66,30 +66,31 @@ a hash for the next chiclet.
 This is shown in {{f-overview}}.
 
 ~~~ aasvg
-+-----+----~~~~----+------+
-| Len |  Content   | Hash |<---------.
-+-----+----~~~~----+------+           |
-                                     H()
-                                     / \
-                           .--------'   '----------.
-                          |                         |
-                          +-----+----~~~~----+------+
-                          | Len |  Content   | Hash |<---.
-                          +-----+----~~~~----+------+     |
-                                                         H() ...
+       <---.            .--------------.            .---- ...
+            |          |                |          |
+           H()         |               H()         |
+           / \         |               / \         |
+ .--------'   '--------)---. .--------'   '--------)---.
+|                      v    |                      v    |
++-----+----~~~~----+--------+-----+----~~~~----+--------+
+| Len |  Content   |  Hash  | Len |  Content   |  Hash  | ...
++-----+----~~~~----+--------+-----+----~~~~----+--------+
 ~~~
 {: #f-overview title="Overview of Format"}
 
-This enables efficient progressive processing
-of content,
-providing strong integrity for all bytes,
-as long as each chiclet is only released after being validated;
+The hash of the entirety of the content
+can thereby be represented by the hash of the first chiclet.
+
+This enables progressive processing of content,
+providing strong integrity for all content bytes,
+provided that each chiclet is only released after being validated;
 see {{consumption}}.
 
 The cost of this scheme is that there is a small amount of overhead.
-Additional bytes for the hash and length fields are interspersed with content.
-The relative cost of that overhead depends on the size of each chunk;
-a chunk size of 4k adds an 0.83% overhead.
+Additional bytes for the hash and length fields
+are interspersed with content bytes.
+The relative cost of that overhead depends on the size of chiclets;
+an average chunk size of 4k adds an 0.83% overhead.
 
 Constructing content in this form
 requires that the entirety of the content is available;
@@ -105,7 +106,7 @@ and presentation language
 developed for QUIC {{!QUIC=RFC9000}}.
 
 
-# Chained Hash Integrity Encoding {#format}
+# Chained Hash Integrity Format {#format}
 
 Any continuous stream of bytes can be turned into
 a stream of variable-length chiclets.
@@ -114,9 +115,14 @@ This format allows for progressive validation of the integrity of content.
 
 ## Format Description
 
-A non-final chiclet comprises a non-zero length,
+The format comprises zero or more non-final chiclets and a final chiclet
+(which can be the first).
+Content bytes are therefore interspersed with framing and integrity bytes,
+increasing the size of the content.
+
+A non-final chiclet comprises a non-zero length (for framing),
 between 1 and 2<sup>61</sup>-1 bytes (inclusive) of content (see {{length}}),
-and a 32 byte hash.
+and a 32 byte hash (that is, integrity bytes).
 
 Lengths are encoded using the variable-length integer format
 from {{Section 16 of QUIC}}.
@@ -159,7 +165,7 @@ Final Chiclet {
 ~~~
 {: #f-layout title="Layout of Content Encoding"}
 
-The format uses SHA-256 exclusively {{!SHA=RFC6234}};
+The format uses SHA-256 for integrity {{!SHA=RFC6234}};
 see {{hash}} for details.
 
 
@@ -208,10 +214,12 @@ according to the value that was provided.
 
 To account for variations in how chiclets are constructed,
 multiple hash values might be provided.
-An entity that wishes to validate against any of the provided hashes
+An entity that wishes to validate against any value
+from a set of provided hash values
 matches the hash of the first chiclet against the provided set.
 Once the first chiclet is processed,
-subsequent chiclets are validated against the preceding hash.
+subsequent chiclets are validated against the single hash
+from the preceding chiclet.
 
 
 ## Construction
@@ -328,15 +336,20 @@ For example, another content coding -
 such as a compression coding -
 could be applied after the `chi` coding.
 
+Note that this format does not allow for multiple values
+of the `chi` hash algorithm.
+Only the last value is visible to a recipient;
+see {{Section 4.2.2 of ?RFC9651}}.
+
 
 # Security Considerations
 
 The security properties of this feature is intended to be
 broadly equivalent to simple hashing of content,
-with the added feature whereby a recipient can use parts of content
+with the added condition that a recipient can use parts of content
 prior to receiving every byte.
 
-This depends on the hash function chosen ({{hash}}),
+The integrity property depends on the hash function chosen ({{hash}}),
 but exposes recipients to a risk of truncation ({{truncation}}).
 There is also a resource exhaustion exposure,
 particularly for recipients with limited resources ({{dos}}).
@@ -365,6 +378,12 @@ with no guarantee that subsequent chiclets will be delivered.
 Any application that uses this format
 therefore needs to be robust in the event that content is truncated.
 
+The final chiclet contains a zero-length prefix.
+That prefix is hashed,
+ensuring that the final chiclet is easily distinguished
+from any non-final chiclets.
+This guarantees that truncation can be detected.
+
 
 ## Chiclet Size {#dos}
 
@@ -373,10 +392,9 @@ creates a denial of service risk;
 see {{length}} for discussion and mitigations.
 
 
-
 # IANA Considerations
 
-This document has no IANA actions.
+TODO: register both `chi` things.
 
 
 --- back
