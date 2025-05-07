@@ -75,6 +75,8 @@ This is shown in {{f-overview}}.
 +-----+----~~~~----+--------+-----+----~~~~----+--------+
 | Len |  Content   |  Hash  | Len |  Content   |  Hash  | ...
 +-----+----~~~~----+--------+-----+----~~~~----+--------+
+
+<-- First byte                                 Last byte -->
 ~~~
 {: #f-overview title="Overview of Format"}
 
