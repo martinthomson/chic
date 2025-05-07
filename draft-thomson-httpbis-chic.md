@@ -273,7 +273,7 @@ to protect against memory exhaustion attacks.
 Implementations of this specification MUST support chiclets
 with length values of up to 16383 bytes (2<sup>14</sup>-1).
 This corresponds to a total chiclet length of 16417.
-Larger length can be used with prior arrangement.
+Larger chiclets can be used with prior arrangement.
 
 The absolute maximum length of a chiclet is determined by the length encoding in SHA-2,
 which is expressed in bits as a 64-bit value.
