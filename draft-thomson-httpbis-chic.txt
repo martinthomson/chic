@@ -4,8 +4,8 @@
 
 HTTP                                                          M. Thomson
 Internet-Draft                                                   Mozilla
-Intended status: Standards Track                              7 May 2025
-Expires: 8 November 2025
+Intended status: Standards Track                         27 October 2026
+Expires: 30 April 2027
 
 
                  Chained Hash Integrity Coding for HTTP
@@ -47,11 +47,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 8 November 2025.
+   This Internet-Draft will expire on 30 April 2027.
 
 Copyright Notice
 
-   Copyright (c) 2025 IETF Trust and the persons identified as the
+   Copyright (c) 2026 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
    This document is subject to BCP 78 and the IETF Trust's Legal
@@ -442,7 +442,7 @@ Table of Contents
 
 Acknowledgments
 
-   TODO acknowledge.
+   Jeffrey Yasskin was a co-author on a previous iteration of this work.
 
 Author's Address
 
