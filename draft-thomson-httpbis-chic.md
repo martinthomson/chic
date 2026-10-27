@@ -416,4 +416,4 @@ TODO: register both `chi` things.
 # Acknowledgments
 {:numbered="false"}
 
-TODO acknowledge.
+{{{Jeffrey Yasskin}} was a co-author on a previous iteration of this work.
