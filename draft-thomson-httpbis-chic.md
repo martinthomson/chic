@@ -87,7 +87,7 @@ This enables progressive processing of content,
 providing strong integrity for all content bytes,
 provided that each chiclet is only released after being validated;
 see {{consumption}}.
-That can reduce latency - or perceived latency -
+That can reduce latency -- or at least perceived latency --
 for applications that are sensitive to delays.
 
 The cost of this scheme is that there is a small amount of overhead.
@@ -333,7 +333,7 @@ This also means that use with `Repr-Digest` might not be useful
 if the length of chiclets could change
 between different encodings of the same representation.
 
-The value associated the `chi` hash algorithm is a 32-byte binary value,
+The value associated with the `chi` hash algorithm is a 32-byte binary value,
 represented as a structured field Byte Sequence;
 see {{Sections 2 and 3 of DIGEST}} for details.
 
@@ -342,14 +342,15 @@ the `chi` hash algorithm value can only be used
 during the removal of the `chi` content coding.
 It therefore provides integrity for content,
 but not necessarily the exact sequence of bytes that appear in the message.
-For example, another content coding -
-such as a compression coding -
-could be applied after the `chi` coding.
+The same sequence of bytes can have multiple valid expressions
+of the `chi` content coding;
+or, another content coding could be applied after the `chi` coding.
 
-Note that this format does not allow for multiple values
-of the `chi` hash algorithm.
+Note that the Content-Digest and Repr-Digest formats
+do not allow for multiple values of the `chi` hash algorithm.
 Only the last value is visible to a recipient;
 see {{Section 4.2.2 of ?RFC9651}}.
+
 
 ## Example {#example}
 
@@ -374,7 +375,7 @@ particularly for recipients with limited resources ({{dos}}).
 This document relies on the second pre-image resistance property of SHA-256 {{!SHA=RFC6234}}.
 If a recipient holds a SHA-256 hash for some content,
 an attacker that wishes to substitute content
-needs to a plaintext that will produce the same hash.
+needs to find a second plaintext that will produce the same hash.
 
 This document does not define the use of an alternative hash function.
 In the event that attacks
@@ -393,10 +394,9 @@ Any application that uses this format
 therefore needs to be robust in the event that content is truncated.
 
 The final chiclet contains a zero-length prefix.
-That prefix is hashed,
-ensuring that the final chiclet is easily distinguished
-from any non-final chiclets.
-This guarantees that truncation can be detected.
+The prefix of every chiclet is hashed,
+but the hashing of a zero length ensures
+that the final chiclet is easily distinguished from any non-final chiclets.
 
 
 ## Chiclet Size {#dos}
@@ -404,6 +404,14 @@ This guarantees that truncation can be detected.
 The requirement to hold an entire chiclet until it is validated
 creates a denial of service risk;
 see {{length}} for discussion and mitigations.
+
+
+## Non-Identifying Integrity {#hash-id}
+
+The use of a cryptographic hash function
+provides pre-image and collision resistance, but not uniqueness.
+The same sequence of bytes can produce many different integrity values.
+As a result, the hash of the first chiclet cannot act as an identifier for content.
 
 
 # IANA Considerations
