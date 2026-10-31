@@ -85,6 +85,9 @@ impl Layout {
     }
 
     /// The total length of the encoded form of the content.
+    ///
+    /// # Panics
+    /// Never; per-chiclet overhead always fits in a `u64`.
     #[must_use]
     pub fn encoded_len(&self) -> u64 {
         self.iter()

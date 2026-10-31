@@ -12,7 +12,12 @@ const COMMENT_COLUMN: usize = 38;
 
 fn hex(data: &[u8]) -> String {
     data.chunks(4)
-        .map(|c| c.iter().map(|b| format!("{b:02x}")).collect::<String>())
+        .map(|c| {
+            c.iter().fold(String::new(), |mut s, b| {
+                write!(s, "{b:02x}").unwrap();
+                s
+            })
+        })
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -56,6 +61,10 @@ fn line(out: &mut String, data: &[u8], comment: &str) {
     }
 }
 
+#[allow(
+    clippy::too_many_lines,
+    reason = "linear script that emits the draft text"
+)]
 fn main() {
     let total = u64::try_from(CONTENT.len()).unwrap();
     let layout = Layout::new(total, repeat(SIZE)).unwrap();

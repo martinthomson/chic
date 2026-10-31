@@ -92,6 +92,9 @@ impl Decoder {
     ///
     /// # Errors
     /// If validation fails, or the decoder previously failed.
+    ///
+    /// # Panics
+    /// Never; internal invariants guarantee a complete header.
     pub fn feed(&mut self, mut input: &[u8], out: &mut Vec<u8>) -> Result<()> {
         while !input.is_empty() {
             match self.state {

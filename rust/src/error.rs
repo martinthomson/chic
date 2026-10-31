@@ -36,8 +36,9 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 // such as by `DecodeReader`, are recovered rather than wrapped.
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Self {
-        if e.get_ref().is_some_and(|inner| inner.is::<Self>()) {
-            if let Some(Ok(inner)) = e.into_inner().map(|i| i.downcast::<Self>()) {
+        type DynError = dyn std::error::Error + Send + Sync;
+        if e.get_ref().is_some_and(DynError::is::<Self>) {
+            if let Some(Ok(inner)) = e.into_inner().map(DynError::downcast::<Self>) {
                 return *inner;
             }
             unreachable!("checked above");

@@ -159,15 +159,15 @@ fn run(cmd: &str, args: &Args) -> chic::Result<()> {
 }
 
 fn main() -> ExitCode {
-    let mut argv = std::env::args().skip(1);
-    let Some(cmd) = argv
+    let mut cli = std::env::args().skip(1);
+    let Some(cmd) = cli
         .next()
         .filter(|c| ["encode", "digest", "decode"].contains(&c.as_str()))
     else {
         eprintln!("{USAGE}");
         return ExitCode::FAILURE;
     };
-    let args = match Args::parse(argv) {
+    let args = match Args::parse(cli) {
         Ok(a) => a,
         Err(e) => return fail(format!("{e}\n{USAGE}")),
     };

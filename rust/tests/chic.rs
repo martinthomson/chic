@@ -108,7 +108,10 @@ fn encode_all_modes(data: &[u8], lengths: &[u64]) -> (Vec<u8>, Digest) {
     let mut chunked = ChunkedEncoder::<VecSpool>::default();
     for c in layout.iter() {
         chunked
-            .write_chunk(&data[c.offset as usize..(c.offset + c.len) as usize])
+            .write_chunk(
+                &data[usize::try_from(c.offset).unwrap()
+                    ..usize::try_from(c.offset + c.len).unwrap()],
+            )
             .unwrap();
         chunked.write_chunk(b"").unwrap(); // ignored
     }
@@ -220,12 +223,13 @@ fn tamper() {
     let mut ranges = Vec::new();
     let mut start = 0;
     for c in layout.iter() {
-        let len = if c.is_final {
+        let len = usize::try_from(if c.is_final {
             1 + c.len
         } else {
             1 + c.len + 32
-        } as usize;
-        ranges.push((start..start + len, c.offset as usize));
+        })
+        .unwrap();
+        ranges.push((start..start + len, usize::try_from(c.offset).unwrap()));
         start += len;
     }
     assert_eq!(start, enc.len());
@@ -316,9 +320,6 @@ fn non_minimal_length() {
 
 #[test]
 fn decode_reader() {
-    let data = content(100_000, 12);
-    let (enc, digest) = encode_slice(&data, repeat(1000)).unwrap();
-
     /// A reader that returns at most 7 bytes at a time.
     struct Dribble<'a>(&'a [u8]);
     impl Read for Dribble<'_> {
@@ -329,6 +330,9 @@ fn decode_reader() {
             Ok(n)
         }
     }
+    let data = content(100_000, 12);
+    let (enc, digest) = encode_slice(&data, repeat(1000)).unwrap();
+
     let mut out = Vec::new();
     DecodeReader::new(Dribble(&enc), digest)
         .read_to_end(&mut out)
