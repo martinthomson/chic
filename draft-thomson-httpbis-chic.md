@@ -9,13 +9,12 @@ number:
 date:
 consensus: true
 v: 3
-area: ""
+area: "ART"
 workgroup: "HTTP"
 keyword:
  - blockchain
 venue:
   group: "HTTP"
-  type: ""
   mail: "ietf-http-wg@w3.org"
   arch: "https://lists.w3.org/Archives/Public/ietf-http-wg/"
   github: "martinthomson/chic"
@@ -98,7 +97,7 @@ The cost of this scheme is that there is a small amount of overhead.
 Additional bytes for the hash and length fields
 are interspersed with content bytes.
 The relative cost of that overhead depends on the size of chiclets;
-an average chunk size of 4KiB adds an 0.83% overhead.
+an average size of 4KiB adds overhead of 0.83%.
 
 Constructing content in this form
 requires that the entirety of the content is available;
@@ -138,10 +137,10 @@ Lengths do not need to be encoded in the minimal form;
 the chosen encoding will affect the resulting digest.
 
 The hash is the output of the SHA-256 algorithm {{!SHA2=RFC6234}}
-that covers the entirely of the subsequent chiclet.
+that covers the entirety of the subsequent chiclet.
 
 The final chiclet includes a zero-valued length field,
-up to 2^61-2 bytes of content
+up to 2<sup>61</sup>-2 bytes of content
 (less if the length is encoded in more than one byte),
 and no hash value.
 The final chiclet ends when content ends,
@@ -153,7 +152,7 @@ the end of an HTTP message; see {{http}}.
 
 The hash value that is computed from the very first chiclet
 is not written to the output.
-This is the value that commits the entire sequence of chiclets
+This is the value that commits to the entire sequence of chiclets
 and the content that it protects.
 This value needs to be carried outside the content;
 see {{digest}} for one method of indicating this value.
@@ -162,7 +161,7 @@ The format is illustrated in {{f-layout}}.
 
 ~~~
 Chic Content-Coding {
-  Chiclet (i) ...,
+  Chiclet (..) ...,
   Final Chiclet (..),
 }
 
@@ -231,7 +230,7 @@ multiple hash values might be provided.
 Though this is not possible with the Repr-Digest and Content-Digest fields
 (see {{digest}}),
 digest values might be provided via other means,
-such as {{SRI}}.
+such as a future extension to {{SRI}}.
 An entity that wishes to validate against any value
 from a set of provided hash values
 matches the hash of the first chiclet against the provided set.
@@ -255,8 +254,8 @@ at the end of the immediately preceding chiclet.
 When constructing content,
 if the content is processed in a forward direction,
 chiclets might be written with placeholder values for hashes.
-Hashes cannot be added until all subsequent chiclets -
-and their hashes -
+Hashes cannot be added until all subsequent chiclets --
+and their hashes --
 are computed.
 
 The construction of chiclets can operate on fixed-sized pieces,
@@ -284,13 +283,16 @@ Implementations that accept untrusted inputs
 might refuse to support large chiclets
 to protect against memory exhaustion attacks.
 
-Implementations of this specification MUST support chiclets
+Receivers MUST support chiclets
 with length values of up to 16383 bytes (2<sup>14</sup>-1).
-This corresponds to a total chiclet length of 16417.
-Larger chiclets can be used with prior arrangement.
+This corresponds to a complete chiclet having a maximum length
+of 16423 for non-final chiclets
+and 16391 for a final chiclet.
+Encoders MUST NOT generate larger chiclets
+unless support for larger values has been arranged.
 
 A receiver can validate that the length of a non-final chiclet
-is correct before reading further;
+is acceptable before reading further;
 the final chiclet does not have a length prefix,
 so receivers need to either rely on other length indicators
 (such as the HTTP Content-Length field)
@@ -354,9 +356,12 @@ see {{Section 12.5.3 of HTTP}} for details.
 
 Intermediaries can check, add, or remove `chi` content coding
 at their discretion.
-Adding the coding requires buffering of much of the message.
+Adding the coding requires buffering of much of the message
+before the hash for any non-final chiclet can be forward;
+see {{construction}}.
+Removal invalidates any digest field; see {{digest}}.
 
-The `chi` content coding is not compatible with range requests
+The `chi` content coding cannot be validated if used with a range request
 ({{Section 14 of HTTP}}).
 
 
@@ -371,9 +376,19 @@ The `chi` digest format is only useful in combination
 with a very specific `chi` content-coding; see {{coding}}.
 Any change to the length of chiclets in that coding
 will invalidate the value of the digest format.
-This also means that use with `Repr-Digest` might not be useful
+This also means that use with Repr-Digest might not be useful
 if the length of chiclets could change
 between different encodings of the same representation.
+
+Values in Content-Digest and Repr-Digest
+apply to the message after the application of all content codings.
+This means that a `chi` digest that is included in those fields
+is only useful if the `chi` content coding is the last coding applied.
+Other ways of conveying the digest do not have this limitation.
+
+Note also that only the last digest value in these fields is visible
+to a recipient;
+see {{Section 4.2.2 of ?RFC9651}}.
 
 The value associated with the `chi` hash algorithm is a 32-byte binary value,
 represented as a structured field Byte Sequence;
@@ -384,18 +399,6 @@ the `chi` hash algorithm value can only be used
 during the removal of the `chi` content coding.
 Decoding removes the coding
 and provides strong integrity based on the digest value.
-
-The same sequence of bytes can have multiple valid expressions
-of the `chi` content coding.
-Different choices about chiclet length --
-and how lengths are encoded --
-produce different digests.
-
-While the `chi` content coding can be applied more than once,
-the Content-Digest and Repr-Digest formats
-do not allow for multiple values of the `chi` hash algorithm.
-Only the last value is visible to a recipient;
-see {{Section 4.2.2 of ?RFC9651}}.
 
 
 ## Example {#example}
@@ -484,7 +487,7 @@ Longer encodings for those integers would produce different digest values.
 # Security Considerations
 
 This coding provides integrity protection equivalent
-to hashing the message.
+to hashing the message content.
 However, there are subtle differences that need to be noted.
 
 The integrity property depends on the hash function chosen ({{hash}}).
@@ -506,8 +509,7 @@ the collision resistance of SHA-256 is also relied on
 to prevent message substitution.
 
 This document does not define the use of an alternative hash function.
-In the event that attacks
-on the second pre-image resistance of SHA-256 are found,
+In the event that attacks on SHA-256 are found,
 new labels can be defined in a new specification.
 The definition of those labels could reuse the construction in this document
 with a different hash function.
