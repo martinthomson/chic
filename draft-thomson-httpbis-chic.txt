@@ -13,8 +13,9 @@ Expires: 4 May 2027
 
 Abstract
 
-   This describes a content-coding for HTTP that enables progressive
-   processing of content, without sacrificing integrity.
+   This document defines a content-coding for HTTP that provides strong
+   integrity protection while maintaining the ability to perform some
+   progressive processing.
 
 About This Document
 
@@ -25,8 +26,8 @@ About This Document
    Status information for this document may be found at
    https://datatracker.ietf.org/doc/draft-thomson-httpbis-chic/.
 
-   Discussion of this document takes place on the HTTP mailing list
-   (mailto:ietf-http-wg@w3.org), which is archived at
+   Discussion of this document takes place on the HTTP Group mailing
+   list (mailto:ietf-http-wg@w3.org), which is archived at
    https://lists.w3.org/Archives/Public/ietf-http-wg/.
 
    Source for this draft and an issue tracker can be found at
@@ -80,8 +81,10 @@ Table of Contents
      5.1.  Hash Choice
      5.2.  Truncation
      5.3.  Chiclet Size
-     5.4.  Non-Identifying Integrity
+     5.4.  Non-Canonical
    6.  IANA Considerations
+     6.1.  Content Coding
+     6.2.  Digest Hash Algorithm
    7.  References
      7.1.  Normative References
      7.2.  Informative References
@@ -132,7 +135,7 @@ Table of Contents
    The cost of this scheme is that there is a small amount of overhead.
    Additional bytes for the hash and length fields are interspersed with
    content bytes.  The relative cost of that overhead depends on the
-   size of chiclets; an average chunk size of 4k adds an 0.83% overhead.
+   size of chiclets; an average size of 4 KiB adds overhead of 0.83%.
 
    Constructing content in this form requires that the entirety of the
    content is available; see Section 3.3.
@@ -162,28 +165,34 @@ Table of Contents
    the content.
 
    A non-final chiclet comprises a non-zero length (for framing),
-   between 1 and 2^61-1 bytes (inclusive) of content (see Section 3.4),
+   between 1 and 2^61-41 bytes (inclusive) of content (see Section 3.4),
    and a 32 byte hash (that is, integrity bytes).
 
    Lengths are encoded using the variable-length integer format from
-   Section 16 of [QUIC].  The hash is the output of the SHA-256
-   algorithm [SHA] that has processed input of the chiclet that follows.
+   Section 16 of [QUIC].  Lengths do not need to be encoded in the
+   minimal form; the chosen encoding will affect the resulting digest.
 
-   The final chiclet includes a zero-valued length field, any number of
-   bytes of content up to 2^61 bytes, and no hash.  The final chiclet
-   ends when content ends, which means that this format can only be used
-   where there is a distinct end to the protected content.  That might
-   mean the end of a file, the end of a stream, or the end of an HTTP
-   message; see Section 4.
+   The hash is the output of the SHA-256 algorithm [SHA2] that covers
+   the entirety of the subsequent chiclet.
+
+   The final chiclet includes a zero-valued length field, up to 2^61-2
+   bytes of content (less if the length is encoded in more than one
+   byte), and no hash value.  The final chiclet ends when content ends,
+   which means that this format can only be used where there is a
+   distinct end to the protected content.  That might mean the end of a
+   file, the end of a stream, or the end of an HTTP message; see
+   Section 4.
 
    The hash value that is computed from the very first chiclet is not
-   written to the output.  Instead, it needs to be carried outside the
-   content; see Section 4.2 for one method of indicating this value.
+   written to the output.  This is the value that commits to the entire
+   sequence of chiclets and the content that it protects.  This value
+   needs to be carried outside the content; see Section 4.2 for one
+   method of indicating this value.
 
    The format is illustrated in Figure 2.
 
    Chic Content-Coding {
-     Chiclet (i) ...,
+     Chiclet (..) ...,
      Final Chiclet (..),
    }
 
@@ -200,7 +209,7 @@ Table of Contents
 
                     Figure 2: Layout of Content Encoding
 
-   The format uses SHA-256 for integrity [SHA]; see Section 5.1 for
+   The format uses SHA-256 for integrity [SHA2]; see Section 5.1 for
    details.
 
 3.2.  Consumption and Validation
@@ -218,7 +227,7 @@ Table of Contents
    The process for progressively validating and releasing content bytes
    starts with an expected hash value, then proceeds as follows:
 
-   1.  Initialize a new instance of SHA-256 [SHA].
+   1.  Initialize a new instance of SHA-256 [SHA2].
 
    2.  Read a variable-length integer.  Update the hash instance with
        each byte as it is read.  Abort with an error if the stream ends
@@ -242,11 +251,14 @@ Table of Contents
    according to the value that was provided.
 
    To account for variations in how chiclets are constructed, multiple
-   hash values might be provided.  An entity that wishes to validate
-   against any value from a set of provided hash values matches the hash
-   of the first chiclet against the provided set.  Once the first
-   chiclet is processed, subsequent chiclets are validated against the
-   single hash from the preceding chiclet.
+   hash values might be provided.  Though this is not possible with the
+   Repr-Digest and Content-Digest fields (see Section 4.2), digest
+   values might be provided via other means, such as a future extension
+   to [SRI].  An entity that wishes to validate against any value from a
+   set of provided hash values matches the hash of the first chiclet
+   against the provided set.  Once the first chiclet is processed,
+   subsequent chiclets are validated against the single hash from the
+   preceding chiclet.
 
 3.3.  Construction
 
@@ -257,9 +269,9 @@ Table of Contents
    preceding chiclet.
 
    When constructing content, if the content is processed in a forward
-   direction, chiclets might be written with placeholders values for
-   hashes.  Hashes cannot be added until all subsequent chiclets - and
-   their hashes - are computed.
+   direction, chiclets might be written with placeholder values for
+   hashes.  Hashes cannot be added until all subsequent chiclets -- and
+   their hashes -- are computed.
 
    The construction of chiclets can operate on fixed-sized pieces, or
    application needs can drive how content is split.  For instance, an
@@ -283,24 +295,32 @@ Table of Contents
    accept untrusted inputs might refuse to support large chiclets to
    protect against memory exhaustion attacks.
 
-   Implementations of this specification MUST support chiclets with
-   length values of up to 16383 bytes (2^14-1).  This corresponds to a
-   total chiclet length of 16417.  Larger chiclets can be used with
-   prior arrangement.
+   Receivers MUST support chiclets with content lengths of up to 16383
+   bytes (2^14-1).  This corresponds to a complete chiclet having a
+   maximum length of 16423 for non-final chiclets and 16391 for a final
+   chiclet.  Encoders MUST NOT generate larger chiclets unless support
+   for larger values has been arranged.
+
+   A receiver can validate that the length of a non-final chiclet is
+   acceptable before reading further; the final chiclet does not have a
+   length prefix, so receivers need to either rely on other length
+   indicators (such as the HTTP Content-Length field) or abort when
+   received bytes exceed the configured maximum.
 
    The absolute maximum length of a chiclet is determined by the length
    encoding in SHA-2, which is expressed in bits as a 64-bit value.
-   Consequently, the maximum length is 2^61-1 bytes, not the 2^62-1
-   bytes of content that can be expressed in a QUIC variable-length
-   integer.  For a chiclet of that size, the length and hash further
-   reduce the available content length by an additional 40 bytes to
-   2^61-41; the final chiclet might reduce that by as little as one byte
-   to 2^61-2 bytes of content.  Of course, there is little value in
-   having such large chiclets, which directly act against the goal of
-   incremental processing.
+   Consequently, the maximum length is 2^61-1 bytes, less overheads.
+   This is less than the 2^62-1 length that could otherwise be expressed
+   in a QUIC variable-length integer.  For a chiclet of that size, the
+   length and hash further reduce the available content length by an
+   additional 40 bytes to 2^61-41; the final chiclet carries only a
+   zero-valued length, which could be one, two, four, or eight bytes
+   long.  Of course, there is little value in having such large
+   chiclets, which directly act against the goal of incremental
+   processing.
 
    An abusive implementation might also seek to generate wasteful work
-   on receipients by constructing many small chiclets.  While small
+   on recipients by constructing many small chiclets.  While small
    chiclets might be necessary for some applications, very small lengths
    can add significant amounts of overhead.  Recipients therefore need
    to look for abusive patterns, such as receiving a large number of
@@ -320,9 +340,28 @@ Table of Contents
 
 4.1.  Content-Coding
 
-   The chi content coding indicates that the content of the request is a
+   The chi content coding indicates that the content of the message is a
    sequence of chiclets, following the construction defined in
-   Section 3.
+   Section 3.  Encoding follows the guidance in Section 3.3; decoding
+   follows the procedure in Section 3.2.
+
+   A decoder can read a message that uses chi content coding without a
+   target digest, though that provides no integrity guarantee.
+
+   A client can indicate that it will accept chi content coding in
+   responses using the Accept-Encoding field.  A client can attempt to
+   use chi content coding on requests, which could result in an error
+   response that carries Accept-Encoding if it is not understood by the
+   server; see Section 12.5.3 of [HTTP] for details.
+
+   Intermediaries can check, add, or remove chi content coding at their
+   discretion.  Adding the coding requires buffering of much of the
+   message before the hash for any non-final chiclet can be sent; see
+   Section 3.3.  Removal invalidates any digest field; see Section 4.2.
+
+   The chi content coding applies to the entirety of a message, so it is
+   unlikely to be useful in combination with range requests (Section 14
+   of [HTTP]).
 
 4.2.  Digest Format
 
@@ -337,20 +376,22 @@ Table of Contents
    be useful if the length of chiclets could change between different
    encodings of the same representation.
 
+   Values in Content-Digest and Repr-Digest apply to the message after
+   the application of all content codings.  This means that a chi digest
+   MUST only be included in those fields if the chi content coding is
+   the last coding applied.  Other ways of conveying the digest do not
+   have this limitation.
+
+   Note also that only the last digest value of a given type is visible
+   to a recipient of these fields; see Section 4.2.2 of [RFC9651].
+
    The value associated with the chi hash algorithm is a 32-byte binary
    value, represented as a structured field Byte Sequence; see Sections
    2 and 3 of [DIGEST] for details.
 
-   Unlike other hash algorithms, the chi hash algorithm value can only
-   be used during the removal of the chi content coding.  It therefore
-   provides integrity for content, but not necessarily the exact
-   sequence of bytes that appear in the message.  The same sequence of
-   bytes can have multiple valid expressions of the chi content coding;
-   or, another content coding could be applied after the chi coding.
-
-   Note that the Content-Digest and Repr-Digest formats do not allow for
-   multiple values of the chi hash algorithm.  Only the last value is
-   visible to a recipient; see Section 4.2.2 of [RFC9651].
+   The chi hash algorithm value can only be used during the removal of
+   the chi content coding, which provides strong integrity based on the
+   digest value.
 
 4.3.  Example
 
@@ -432,28 +473,32 @@ Table of Contents
 
 5.  Security Considerations
 
-   The security properties of this feature is intended to be broadly
-   equivalent to simple hashing of content, with the added condition
-   that a recipient can use parts of content prior to receiving every
-   byte.
+   This coding provides integrity protection equivalent to hashing the
+   message content.  However, there are subtle differences that need to
+   be noted.
 
    The integrity property depends on the hash function chosen
-   (Section 5.1), but exposes recipients to a risk of truncation
-   (Section 5.2).  There is also a resource exhaustion exposure,
-   particularly for recipients with limited resources (Section 5.3).
+   (Section 5.1).  Recipients are exposed to a risk of message
+   truncation (Section 5.2).  There is also a resource exhaustion
+   exposure, particularly for recipients with limited resources
+   (Section 5.3).  Finally, the digest value produced is not canonical
+   (Section 5.4).
 
 5.1.  Hash Choice
 
    This document relies on the second pre-image resistance property of
-   SHA-256 [SHA].  If a recipient holds a SHA-256 hash for some content,
-   an attacker that wishes to substitute content needs to find a second
-   plaintext that will produce the same hash.
+   SHA-256 [SHA2].  If a recipient holds a SHA-256 hash for some
+   content, an attacker that wishes to substitute content needs to find
+   a second plaintext that will produce the same hash.
+
+   If the digest is subsequently signed, the collision resistance of
+   SHA-256 is also relied on to prevent message substitution.
 
    This document does not define the use of an alternative hash
-   function.  In the event that attacks on the second pre-image
-   resistance of SHA-256 are found, new labels can be defined in a new
-   specification.  The definition of those labels could reuse the
-   construction in this document with a different hash function.
+   function.  In the event that attacks on SHA-256 are found, new labels
+   can be defined in a new specification.  The definition of those
+   labels could reuse the construction in this document with a different
+   hash function.
 
 5.2.  Truncation
 
@@ -462,9 +507,9 @@ Table of Contents
    chiclets will be delivered.  Any application that uses this format
    therefore needs to be robust in the event that content is truncated.
 
-   The final chiclet contains a zero-length prefix.  The prefix of every
-   chiclet is hashed, but the hashing of a zero length ensures that the
-   final chiclet is easily distinguished from any non-final chiclets.
+   The final chiclet contains a zero-valued length prefix.  The prefix
+   of every chiclet is hashed, so a value of zero ensures that the final
+   chiclet is easily distinguished from any non-final chiclets.
 
 5.3.  Chiclet Size
 
@@ -472,16 +517,45 @@ Table of Contents
    creates a denial of service risk; see Section 3.4 for discussion and
    mitigations.
 
-5.4.  Non-Identifying Integrity
+5.4.  Non-Canonical
 
-   The use of a cryptographic hash function provides pre-image and
-   collision resistance, but not uniqueness.  The same sequence of bytes
-   can produce many different integrity values.  As a result, the hash
-   of the first chiclet cannot act as an identifier for content.
+   The same sequence of bytes can produce many different integrity
+   values.  As a result, the hash of the first chiclet cannot act as a
+   canonical identifier for content.  Each digest value commits to a
+   specific sequence of chiclets, so cannot be used with a different
+   arrangement of chiclet lengths.
 
 6.  IANA Considerations
 
-   TODO: register both chi things.
+   This document registers a content coding and a hash algorithm for
+   HTTP digest fields.
+
+6.1.  Content Coding
+
+   IANA is requested to add the following entry to the "HTTP Content
+   Coding Registry" (https://www.iana.org/assignments/http-
+   parameters/#content-coding) established by Section 16.6.1 of [HTTP]:
+
+   Name:  chi
+
+   Description:  Chained Hash Integrity Coding
+
+   Reference:  Section 4.1 of this document
+
+6.2.  Digest Hash Algorithm
+
+   IANA is requested to add the following entry to the "Hash Algorithms
+   for HTTP Digest Fields" registry (https://www.iana.org/assignments/
+   http-digest-hash-alg/) established by Section 7.2 of [DIGEST]:
+
+   Algorithm Key:  chi
+
+   Status:  Active
+
+   Description:  The SHA-256 hash of the first chiclet of the chi
+      content coding
+
+   Reference:  Section 4.2 of this document
 
 7.  References
 
@@ -510,7 +584,7 @@ Table of Contents
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
-   [SHA]      Eastlake 3rd, D. and T. Hansen, "US Secure Hash Algorithms
+   [SHA2]     Eastlake 3rd, D. and T. Hansen, "US Secure Hash Algorithms
               (SHA and SHA-based HMAC and HKDF)", RFC 6234,
               DOI 10.17487/RFC6234, May 2011,
               <https://www.rfc-editor.org/rfc/rfc6234>.
@@ -520,6 +594,9 @@ Table of Contents
    [RFC9651]  Nottingham, M. and P. Kamp, "Structured Field Values for
               HTTP", RFC 9651, DOI 10.17487/RFC9651, September 2024,
               <https://www.rfc-editor.org/rfc/rfc9651>.
+
+   [SRI]      Braun, F., "Subresource Integrity", 20 March 2026,
+              <https://w3c.github.io/webappsec-subresource-integrity/>.
 
 Acknowledgments
 
