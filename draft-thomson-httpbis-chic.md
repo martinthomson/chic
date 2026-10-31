@@ -4,7 +4,7 @@ abbrev: "CHIC"
 category: std
 
 docname: draft-thomson-httpbis-chic-latest
-submissiontype: IETF  # also: "independent", "editorial", "IAB", or "IRTF"
+submissiontype: IETF
 number:
 date:
 consensus: true
@@ -97,7 +97,7 @@ The cost of this scheme is that there is a small amount of overhead.
 Additional bytes for the hash and length fields
 are interspersed with content bytes.
 The relative cost of that overhead depends on the size of chiclets;
-an average size of 4KiB adds overhead of 0.83%.
+an average size of 4 KiB adds overhead of 0.83%.
 
 Constructing content in this form
 requires that the entirety of the content is available;
@@ -284,7 +284,7 @@ might refuse to support large chiclets
 to protect against memory exhaustion attacks.
 
 Receivers MUST support chiclets
-with length values of up to 16383 bytes (2<sup>14</sup>-1).
+with content lengths of up to 16383 bytes (2<sup>14</sup>-1).
 This corresponds to a complete chiclet having a maximum length
 of 16423 for non-final chiclets
 and 16391 for a final chiclet.
@@ -357,11 +357,12 @@ see {{Section 12.5.3 of HTTP}} for details.
 Intermediaries can check, add, or remove `chi` content coding
 at their discretion.
 Adding the coding requires buffering of much of the message
-before the hash for any non-final chiclet can be forward;
+before the hash for any non-final chiclet can be sent;
 see {{construction}}.
 Removal invalidates any digest field; see {{digest}}.
 
-The `chi` content coding cannot be validated if used with a range request
+The `chi` content coding applies to the entirety of a message,
+so it is unlikely to be useful in combination with range requests
 ({{Section 14 of HTTP}}).
 
 
@@ -382,23 +383,21 @@ between different encodings of the same representation.
 
 Values in Content-Digest and Repr-Digest
 apply to the message after the application of all content codings.
-This means that a `chi` digest that is included in those fields
-is only useful if the `chi` content coding is the last coding applied.
+This means that a `chi` digest MUST only be included in those fields
+if the `chi` content coding is the last coding applied.
 Other ways of conveying the digest do not have this limitation.
 
-Note also that only the last digest value in these fields is visible
-to a recipient;
+Note also that only the last digest value of a given type
+is visible to a recipient of these fields;
 see {{Section 4.2.2 of ?RFC9651}}.
 
 The value associated with the `chi` hash algorithm is a 32-byte binary value,
 represented as a structured field Byte Sequence;
 see {{Sections 2 and 3 of DIGEST}} for details.
 
-Unlike other hash algorithms,
-the `chi` hash algorithm value can only be used
-during the removal of the `chi` content coding.
-Decoding removes the coding
-and provides strong integrity based on the digest value.
+The `chi` hash algorithm value can only be used
+during the removal of the `chi` content coding,
+which provides strong integrity based on the digest value.
 
 
 ## Example {#example}
@@ -523,9 +522,9 @@ with no guarantee that subsequent chiclets will be delivered.
 Any application that uses this format
 therefore needs to be robust in the event that content is truncated.
 
-The final chiclet contains a zero-length prefix.
+The final chiclet contains a zero-valued length prefix.
 The prefix of every chiclet is hashed,
-but the hashing of a zero length ensures
+so a value of zero ensures
 that the final chiclet is easily distinguished from any non-final chiclets.
 
 
