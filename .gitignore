@@ -22,3 +22,5 @@ draft-thomson-httpbis-chic.xml
 package-lock.json
 report.xml
 !requirements.txt
+
+/rust/target/

@@ -1,0 +1,11 @@
+[package]
+name = "chic"
+version = "0.1.0"
+edition = "2024"
+description = "Chained Hash Integrity Coding (draft-thomson-httpbis-chic)"
+authors = ["Martin Thomson <mt@lowentropy.net>"]
+publish = false
+
+[dependencies]
+sha2 = "0.10"
+thiserror = "2.0.21"

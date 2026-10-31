@@ -354,7 +354,85 @@ see {{Section 4.2.2 of ?RFC9651}}.
 
 ## Example {#example}
 
-TODO
+This example shows content of 47 bytes, split into chiclets of 16 bytes.
+This chiclet size is far smaller than would be used in practice,
+but it allows the example to show multiple chiclets.
+The resulting 3 chiclets are shown in {{ex-chiclets}},
+with the hash of each, starting from the last.
+
+~~~
+Chiclet 3:
+  Length: 0
+  Content: " the next one.\n"
+  SHA-256 of Chiclet 3:
+    1ea4150d 2454faec 9e8b2993 aac8ef95
+    15477606 7c59005c 57f00583 81018b09
+
+Chiclet 2:
+  Length: 16
+  Content: "ries the hash of"
+  Hash of Chiclet 3:
+    1ea4150d 2454faec 9e8b2993 aac8ef95
+    15477606 7c59005c 57f00583 81018b09
+  SHA-256 of Chiclet 2:
+    c7156912 ad30c2a3 910cc3d8 06ed2318
+    aa25474f ff11f6a8 9efb6e6d 4ff7fe84
+
+Chiclet 1:
+  Length: 16
+  Content: "Each chiclet car"
+  Hash of Chiclet 2:
+    c7156912 ad30c2a3 910cc3d8 06ed2318
+    aa25474f ff11f6a8 9efb6e6d 4ff7fe84
+  SHA-256 of Chiclet 1:
+    e3bb01bc b8baa8d0 9010fb28 66b73d27
+    d8ff408a b74a7bc7 2af12be4 464f94d7
+~~~
+{: #ex-chiclets title="Example Chiclets"}
+
+The hash of the first chiclet can be carried in the Content-Digest field,
+as shown in the HTTP response in {{ex-response}}.
+
+~~~ http-message
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Encoding: chi
+Content-Length: 114
+Content-Digest: chi=:47sBvLi6qNCQEPsoZrc9J9j/QIq3SnvHKvEr5EZPlNc=:
+~~~
+{: #ex-response title="Example Response Header"}
+
+The 114 bytes of response content are shown in {{ex-content}} in hexadecimal.
+
+~~~
+10                                    # Length = 16
+45616368 20636869 636c6574 20636172   # "Each chiclet car"
+c7156912 ad30c2a3 910cc3d8 06ed2318   # Hash of Chiclet 2
+aa25474f ff11f6a8 9efb6e6d 4ff7fe84
+10                                    # Length = 16
+72696573 20746865 20686173 68206f66   # "ries the hash of"
+1ea4150d 2454faec 9e8b2993 aac8ef95   # Hash of Chiclet 3
+15477606 7c59005c 57f00583 81018b09
+00                                    # Length = 0
+20746865 206e6578 74206f6e 652e0a     # " the next one.\n"
+~~~
+{: #ex-content title="Example Encoded Content"}
+
+Empty content is encoded as a single final chiclet,
+comprising a single byte with a value of 0.
+The `chi` digest of empty content is therefore the SHA-256 hash
+of that one byte, as shown in {{ex-empty}}.
+
+~~~ http-message
+Content-Encoding: chi
+Content-Length: 1
+Content-Digest: chi=:bjQLnP+zepicpUTmu3gKLHiQHT+zNzh2hRGjBhevoB0=:
+~~~
+{: #ex-empty title="Fields for Empty Content"}
+
+Note that these examples use the minimal encoding
+for the variable-length integers.
+Longer encodings for those integers would produce different digest values.
 
 
 # Security Considerations
