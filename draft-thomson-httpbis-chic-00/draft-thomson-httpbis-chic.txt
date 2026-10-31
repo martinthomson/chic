@@ -1,0 +1,532 @@
+
+
+
+
+HTTP                                                          M. Thomson
+Internet-Draft                                                   Mozilla
+Intended status: Standards Track                         31 October 2026
+Expires: 4 May 2027
+
+
+                 Chained Hash Integrity Coding for HTTP
+                   draft-thomson-httpbis-chic-latest
+
+Abstract
+
+   This describes a content-coding for HTTP that enables progressive
+   processing of content, without sacrificing integrity.
+
+About This Document
+
+   This note is to be removed before publishing as an RFC.
+
+   The latest revision of this draft can be found at
+   https://martinthomson.github.io/chic/draft-thomson-httpbis-chic.html.
+   Status information for this document may be found at
+   https://datatracker.ietf.org/doc/draft-thomson-httpbis-chic/.
+
+   Discussion of this document takes place on the HTTP mailing list
+   (mailto:ietf-http-wg@w3.org), which is archived at
+   https://lists.w3.org/Archives/Public/ietf-http-wg/.
+
+   Source for this draft and an issue tracker can be found at
+   https://github.com/martinthomson/chic.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 4 May 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction
+   2.  Conventions and Definitions
+   3.  Chained Hash Integrity Format
+     3.1.  Format Description
+     3.2.  Consumption and Validation
+     3.3.  Construction
+     3.4.  Length Constraints
+   4.  HTTP Usage
+     4.1.  Content-Coding
+     4.2.  Digest Format
+     4.3.  Example
+   5.  Security Considerations
+     5.1.  Hash Choice
+     5.2.  Truncation
+     5.3.  Chiclet Size
+     5.4.  Non-Identifying Integrity
+   6.  IANA Considerations
+   7.  References
+     7.1.  Normative References
+     7.2.  Informative References
+   Acknowledgments
+   Author's Address
+
+1.  Introduction
+
+   Hash-based integrity is a powerful tool for ensuring that content
+   matches expectations.  Hashes are often the basis of digital
+   signature schemes that can authenticate content, or at least provide
+   verifiable proof of authorization.
+
+   The main challenge with hashes is that the entirety of a piece of
+   content needs to be acquired in order to validate the hash.  This
+   document describes a method of hash generation that can be verified
+   progressively.  This enables systems that depend on progressive
+   processing, such as streaming processing of a long sequence of
+   records, or performance-sensitive applications like HTML rendering.
+
+   The way this works is by splitting a document into chunks, or
+   chiclets, each comprising a length, some number of bytes of content,
+   and a hash for the next chiclet.  This is shown in Figure 1.
+
+          <---.            .--------------.            .---- ...
+               |          |                |          |
+              H()         |               H()         |
+              / \         |               / \         |
+    .--------'   '--------)---. .--------'   '--------)---.
+   |                      v    |                      v    |
+   +-----+----~~~~----+--------+-----+----~~~~----+--------+
+   | Len |  Content   |  Hash  | Len |  Content   |  Hash  | ...
+   +-----+----~~~~----+--------+-----+----~~~~----+--------+
+
+   <-- First byte                                 Last byte -->
+
+                        Figure 1: Overview of Format
+
+   The hash of the entirety of the content can thereby be represented by
+   the hash of the first chiclet.
+
+   This enables progressive processing of content, providing strong
+   integrity for all content bytes, provided that each chiclet is only
+   released after being validated; see Section 3.2.  That can reduce
+   latency -- or at least perceived latency -- for applications that are
+   sensitive to delays.
+
+   The cost of this scheme is that there is a small amount of overhead.
+   Additional bytes for the hash and length fields are interspersed with
+   content bytes.  The relative cost of that overhead depends on the
+   size of chiclets; an average chunk size of 4k adds an 0.83% overhead.
+
+   Constructing content in this form requires that the entirety of the
+   content is available; see Section 3.3.
+
+2.  Conventions and Definitions
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+   This document uses the varint encoding and presentation language
+   developed for QUIC [QUIC].
+
+3.  Chained Hash Integrity Format
+
+   Any continuous stream of bytes can be turned into a stream of
+   variable-length chiclets.  This format allows for progressive
+   validation of the integrity of content.
+
+3.1.  Format Description
+
+   The format comprises zero or more non-final chiclets and a final
+   chiclet (which can be the first).  Content bytes are therefore
+   interspersed with framing and integrity bytes, increasing the size of
+   the content.
+
+   A non-final chiclet comprises a non-zero length (for framing),
+   between 1 and 2^61-1 bytes (inclusive) of content (see Section 3.4),
+   and a 32 byte hash (that is, integrity bytes).
+
+   Lengths are encoded using the variable-length integer format from
+   Section 16 of [QUIC].  The hash is the output of the SHA-256
+   algorithm [SHA] that has processed input of the chiclet that follows.
+
+   The final chiclet includes a zero-valued length field, any number of
+   bytes of content up to 2^61 bytes, and no hash.  The final chiclet
+   ends when content ends, which means that this format can only be used
+   where there is a distinct end to the protected content.  That might
+   mean the end of a file, the end of a stream, or the end of an HTTP
+   message; see Section 4.
+
+   The hash value that is computed from the very first chiclet is not
+   written to the output.  Instead, it needs to be carried outside the
+   content; see Section 4.2 for one method of indicating this value.
+
+   The format is illustrated in Figure 2.
+
+   Chic Content-Coding {
+     Chiclet (i) ...,
+     Final Chiclet (..),
+   }
+
+   Chiclet {
+     Length (i),
+     Content (8..),
+     Hash (256),
+   }
+
+   Final Chiclet {
+     Length (i) = 0,
+     Content (..),
+   }
+
+                    Figure 2: Layout of Content Encoding
+
+   The format uses SHA-256 for integrity [SHA]; see Section 5.1 for
+   details.
+
+3.2.  Consumption and Validation
+
+   An entity that receives a stream of bytes in this format will need a
+   hash value for the first chiclet in order to validate the content.
+   That value might be provided via some alternative communication
+   channel; one method for carrying this hash value in HTTP fields is
+   defined in Section 4.2.
+
+   Without the hash of the first chiclet, it is not possible to validate
+   the integrity of the content.  Content can still be processed by
+   removing the length and hash bytes.
+
+   The process for progressively validating and releasing content bytes
+   starts with an expected hash value, then proceeds as follows:
+
+   1.  Initialize a new instance of SHA-256 [SHA].
+
+   2.  Read a variable-length integer.  Update the hash instance with
+       each byte as it is read.  Abort with an error if the stream ends
+       before reading a complete value.
+
+   3.  Read the indicated number of bytes, plus 32, from the stream.  If
+       the length value is 0, read to the end of the stream instead.
+       Update the hash instance with each byte as it is read.  Abort
+       with an error if the stream ends before reading this amount.
+
+   4.  Finalize the hash and generate hash output.  If the hash output
+       is not identical to the expected value, abort with an error.
+
+   5.  Release the content bytes.
+
+   6.  If the length value is non-zero, replace the expected hash value
+       with the last 32 bytes read from the stream and return to step 1.
+       Otherwise, end the process successfully.
+
+   This process ensures that released bytes are all integrity-protected,
+   according to the value that was provided.
+
+   To account for variations in how chiclets are constructed, multiple
+   hash values might be provided.  An entity that wishes to validate
+   against any value from a set of provided hash values matches the hash
+   of the first chiclet against the provided set.  Once the first
+   chiclet is processed, subsequent chiclets are validated against the
+   single hash from the preceding chiclet.
+
+3.3.  Construction
+
+   In order to produce hashes, content needs to be processed in reverse
+   order.  Content is split into multiple pieces, which are turned into
+   chiclets.  These chiclets are hashed, starting from the last, placing
+   the resulting hash from each chiclet at the end of the immediately
+   preceding chiclet.
+
+   When constructing content, if the content is processed in a forward
+   direction, chiclets might be written with placeholders values for
+   hashes.  Hashes cannot be added until all subsequent chiclets - and
+   their hashes - are computed.
+
+   The construction of chiclets can operate on fixed-sized pieces, or
+   application needs can drive how content is split.  For instance, an
+   image that can be displayed at progressively-higher levels of quality
+   can have certain points at which significant quality improvements can
+   be realized; aligning chiclets to those points might enable better
+   incremental processing.
+
+   The fact that content needs to be processed in reverse order makes
+   this format ill-suited to situations where content of arbitrary
+   length is streamed.  It is also poorly suited to use with
+   dynamically-generated content, especially where content is latency
+   sensitive, because it requires two processing passes to produce the
+   format.  It is therefore best suited to static resources where the
+   format can be pregenerated and saved.
+
+3.4.  Length Constraints
+
+   An implementation that processes input needs to hold an entire
+   chiclet in its memory before releasing it.  Implementations that
+   accept untrusted inputs might refuse to support large chiclets to
+   protect against memory exhaustion attacks.
+
+   Implementations of this specification MUST support chiclets with
+   length values of up to 16383 bytes (2^14-1).  This corresponds to a
+   total chiclet length of 16417.  Larger chiclets can be used with
+   prior arrangement.
+
+   The absolute maximum length of a chiclet is determined by the length
+   encoding in SHA-2, which is expressed in bits as a 64-bit value.
+   Consequently, the maximum length is 2^61-1 bytes, not the 2^62-1
+   bytes of content that can be expressed in a QUIC variable-length
+   integer.  For a chiclet of that size, the length and hash further
+   reduce the available content length by an additional 40 bytes to
+   2^61-41; the final chiclet might reduce that by as little as one byte
+   to 2^61-2 bytes of content.  Of course, there is little value in
+   having such large chiclets, which directly act against the goal of
+   incremental processing.
+
+   An abusive implementation might also seek to generate wasteful work
+   on receipients by constructing many small chiclets.  While small
+   chiclets might be necessary for some applications, very small lengths
+   can add significant amounts of overhead.  Recipients therefore need
+   to look for abusive patterns, such as receiving a large number of
+   chiclets below a given threshold, rather than have a strict lower
+   bound on chiclet length.
+
+4.  HTTP Usage
+
+   The use of progressive validation is well-suited to HTTP applications
+   [HTTP] that rely on the streaming and incremental processing of
+   message content.
+
+   A content-coding is defined to describe content that can be
+   progressively decoded; see Section 4.1.  A digest format is defined
+   to allow the hash of the first chiclet to be signaled; see
+   Section 4.2.
+
+4.1.  Content-Coding
+
+   The chi content coding indicates that the content of the request is a
+   sequence of chiclets, following the construction defined in
+   Section 3.
+
+4.2.  Digest Format
+
+   The chi hash algorithm label identifies the use of the format
+   described in Section 3 when carried in the Content-Digest or Repr-
+   Digest fields that are defined in [DIGEST].
+
+   The chi digest format is only useful in combination with a very
+   specific chi content-coding; see Section 4.1.  Any change to the
+   length of chiclets in that coding will invalidate the value of the
+   digest format.  This also means that use with Repr-Digest might not
+   be useful if the length of chiclets could change between different
+   encodings of the same representation.
+
+   The value associated with the chi hash algorithm is a 32-byte binary
+   value, represented as a structured field Byte Sequence; see Sections
+   2 and 3 of [DIGEST] for details.
+
+   Unlike other hash algorithms, the chi hash algorithm value can only
+   be used during the removal of the chi content coding.  It therefore
+   provides integrity for content, but not necessarily the exact
+   sequence of bytes that appear in the message.  The same sequence of
+   bytes can have multiple valid expressions of the chi content coding;
+   or, another content coding could be applied after the chi coding.
+
+   Note that the Content-Digest and Repr-Digest formats do not allow for
+   multiple values of the chi hash algorithm.  Only the last value is
+   visible to a recipient; see Section 4.2.2 of [RFC9651].
+
+4.3.  Example
+
+   This example shows content of 47 bytes, split into chiclets of 16
+   bytes.  This chiclet size is far smaller than would be used in
+   practice, but it allows the example to show multiple chiclets.  The
+   resulting 3 chiclets are shown in Figure 3, with the hash of each,
+   starting from the last.
+
+   Chiclet 3:
+     Length: 0
+     Content: " the next one.\n"
+     SHA-256 of Chiclet 3:
+       1ea4150d 2454faec 9e8b2993 aac8ef95
+       15477606 7c59005c 57f00583 81018b09
+
+   Chiclet 2:
+     Length: 16
+     Content: "ries the hash of"
+     Hash of Chiclet 3:
+       1ea4150d 2454faec 9e8b2993 aac8ef95
+       15477606 7c59005c 57f00583 81018b09
+     SHA-256 of Chiclet 2:
+       c7156912 ad30c2a3 910cc3d8 06ed2318
+       aa25474f ff11f6a8 9efb6e6d 4ff7fe84
+
+   Chiclet 1:
+     Length: 16
+     Content: "Each chiclet car"
+     Hash of Chiclet 2:
+       c7156912 ad30c2a3 910cc3d8 06ed2318
+       aa25474f ff11f6a8 9efb6e6d 4ff7fe84
+     SHA-256 of Chiclet 1:
+       e3bb01bc b8baa8d0 9010fb28 66b73d27
+       d8ff408a b74a7bc7 2af12be4 464f94d7
+
+                         Figure 3: Example Chiclets
+
+   The hash of the first chiclet can be carried in the Content-Digest
+   field, as shown in the HTTP response in Figure 4.
+
+   HTTP/1.1 200 OK
+   Content-Type: text/plain
+   Content-Encoding: chi
+   Content-Length: 114
+   Content-Digest: chi=:47sBvLi6qNCQEPsoZrc9J9j/QIq3SnvHKvEr5EZPlNc=:
+
+                     Figure 4: Example Response Header
+
+   The 114 bytes of response content are shown in Figure 5 in
+   hexadecimal.
+
+   10                                    # Length = 16
+   45616368 20636869 636c6574 20636172   # "Each chiclet car"
+   c7156912 ad30c2a3 910cc3d8 06ed2318   # Hash of Chiclet 2
+   aa25474f ff11f6a8 9efb6e6d 4ff7fe84
+   10                                    # Length = 16
+   72696573 20746865 20686173 68206f66   # "ries the hash of"
+   1ea4150d 2454faec 9e8b2993 aac8ef95   # Hash of Chiclet 3
+   15477606 7c59005c 57f00583 81018b09
+   00                                    # Length = 0
+   20746865 206e6578 74206f6e 652e0a     # " the next one.\n"
+
+                     Figure 5: Example Encoded Content
+
+   Empty content is encoded as a single final chiclet, comprising a
+   single byte with a value of 0.  The chi digest of empty content is
+   therefore the SHA-256 hash of that one byte, as shown in Figure 6.
+
+   Content-Encoding: chi
+   Content-Length: 1
+   Content-Digest: chi=:bjQLnP+zepicpUTmu3gKLHiQHT+zNzh2hRGjBhevoB0=:
+
+                     Figure 6: Fields for Empty Content
+
+   Note that these examples use the minimal encoding for the variable-
+   length integers.  Longer encodings for those integers would produce
+   different digest values.
+
+5.  Security Considerations
+
+   The security properties of this feature is intended to be broadly
+   equivalent to simple hashing of content, with the added condition
+   that a recipient can use parts of content prior to receiving every
+   byte.
+
+   The integrity property depends on the hash function chosen
+   (Section 5.1), but exposes recipients to a risk of truncation
+   (Section 5.2).  There is also a resource exhaustion exposure,
+   particularly for recipients with limited resources (Section 5.3).
+
+5.1.  Hash Choice
+
+   This document relies on the second pre-image resistance property of
+   SHA-256 [SHA].  If a recipient holds a SHA-256 hash for some content,
+   an attacker that wishes to substitute content needs to find a second
+   plaintext that will produce the same hash.
+
+   This document does not define the use of an alternative hash
+   function.  In the event that attacks on the second pre-image
+   resistance of SHA-256 are found, new labels can be defined in a new
+   specification.  The definition of those labels could reuse the
+   construction in this document with a different hash function.
+
+5.2.  Truncation
+
+   The use of a streaming format means that content might be released to
+   an application for processing, with no guarantee that subsequent
+   chiclets will be delivered.  Any application that uses this format
+   therefore needs to be robust in the event that content is truncated.
+
+   The final chiclet contains a zero-length prefix.  The prefix of every
+   chiclet is hashed, but the hashing of a zero length ensures that the
+   final chiclet is easily distinguished from any non-final chiclets.
+
+5.3.  Chiclet Size
+
+   The requirement to hold an entire chiclet until it is validated
+   creates a denial of service risk; see Section 3.4 for discussion and
+   mitigations.
+
+5.4.  Non-Identifying Integrity
+
+   The use of a cryptographic hash function provides pre-image and
+   collision resistance, but not uniqueness.  The same sequence of bytes
+   can produce many different integrity values.  As a result, the hash
+   of the first chiclet cannot act as an identifier for content.
+
+6.  IANA Considerations
+
+   TODO: register both chi things.
+
+7.  References
+
+7.1.  Normative References
+
+   [DIGEST]   Polli, R. and L. Pardue, "Digest Fields", RFC 9530,
+              DOI 10.17487/RFC9530, February 2024,
+              <https://www.rfc-editor.org/rfc/rfc9530>.
+
+   [HTTP]     Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
+              Ed., "HTTP Semantics", STD 97, RFC 9110,
+              DOI 10.17487/RFC9110, June 2022,
+              <https://www.rfc-editor.org/rfc/rfc9110>.
+
+   [QUIC]     Iyengar, J., Ed. and M. Thomson, Ed., "QUIC: A UDP-Based
+              Multiplexed and Secure Transport", RFC 9000,
+              DOI 10.17487/RFC9000, May 2021,
+              <https://www.rfc-editor.org/rfc/rfc9000>.
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [SHA]      Eastlake 3rd, D. and T. Hansen, "US Secure Hash Algorithms
+              (SHA and SHA-based HMAC and HKDF)", RFC 6234,
+              DOI 10.17487/RFC6234, May 2011,
+              <https://www.rfc-editor.org/rfc/rfc6234>.
+
+7.2.  Informative References
+
+   [RFC9651]  Nottingham, M. and P. Kamp, "Structured Field Values for
+              HTTP", RFC 9651, DOI 10.17487/RFC9651, September 2024,
+              <https://www.rfc-editor.org/rfc/rfc9651>.
+
+Acknowledgments
+
+   Jeffrey Yasskin was a co-author on a previous iteration of this work.
+
+Author's Address
+
+   Martin Thomson
+   Mozilla
+   Email: mt@lowentropy.net
