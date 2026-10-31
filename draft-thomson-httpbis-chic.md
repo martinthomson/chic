@@ -547,7 +547,42 @@ so cannot be used with a different arrangement of chiclet lengths.
 
 # IANA Considerations
 
-TODO: register both `chi` things.
+This document registers a content coding and a hash algorithm for HTTP digest fields.
+
+
+## Content Coding
+
+IANA is requested to add the following entry
+to the ["HTTP Content Coding Registry"](https://www.iana.org/assignments/http-parameters/#content-coding)
+established by {{Section 16.6.1 of HTTP}}:
+
+Name:
+: chi
+
+Description:
+: Chained Hash Integrity Coding
+
+Reference:
+: {{coding}} of this document
+
+
+## Digest Hash Algorithm
+
+IANA is requested to add the following entry
+to the ["Hash Algorithms for HTTP Digest Fields" registry](https://www.iana.org/assignments/http-digest-hash-alg/)
+established by {{Section 7.2 of DIGEST}}:
+
+Algorithm Key:
+: chi
+
+Status:
+: Active
+
+Description:
+: The SHA-256 hash of the first chiclet of the `chi` content coding
+
+Reference:
+: {{digest}} of this document
 
 
 --- back
