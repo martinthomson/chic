@@ -91,18 +91,22 @@ maintaining strong integrity for all content bytes,
 provided that each chiclet is only released after being validated;
 see {{consumption}}.
 That can reduce latency -- or at least perceived latency --
-for applications that are sensitive to delays.
+for applications that are sensitive to delays
+by allowing processing to start
+before the entire sequence of bytes is received.
 
 The cost of this scheme is that there is a small amount of overhead.
 Additional bytes for the hash and length fields
 are interspersed with content bytes.
 The relative cost of that overhead depends on the size of chiclets;
-an average size of 4 KiB adds overhead of 0.83%.
+a 4 KiB chiclet size adds overhead of 0.83%,
+whereas a 64 KiB chiclet adds overhead of 0.052%.
 Larger chiclets reduce overhead, but add latency;
 smaller chiclets can improve latency with higher overheads.
 
-Constructing content in this form
-requires that the entirety of the content is available;
+Though it is possible to process data incrementally,
+constructing this format
+requires two passes over the entire sequence of bytes;
 see {{construction}}.
 
 
@@ -201,12 +205,18 @@ proceeds as follows:
 
 1. Initialize a new instance of SHA-256 {{!SHA2}}.
 
-1. Read a variable-length integer.
+1. Read a variable-length integer as a length.
    Update the hash instance with each byte as it is read.
    Abort with an error if the stream ends before reading a complete value.
 
-1. Read the indicated number of bytes, plus 32, from the stream.
+1. Read the indicated number of bytes from the stream.
    If the length value is 0, read to the end of the stream instead.
+   Update the hash instance with each byte as it is read.
+   Abort with an error if the stream ends before reading this amount.
+
+1. If the length value is non-zero,
+   read 32 bytes from the stream
+   and assign those bytes to the expected hash value.
    Update the hash instance with each byte as it is read.
    Abort with an error if the stream ends before reading this amount.
 
@@ -216,10 +226,7 @@ proceeds as follows:
 
 1. Release the content bytes.
 
-1. If the length value is non-zero,
-   replace the expected hash value
-   with the last 32 bytes read from the stream
-   and return to step 1.
+1. If the length value is non-zero, return to the start.
    Otherwise, end the process successfully.
 
 This process ensures that released bytes are all integrity-protected,
@@ -235,7 +242,7 @@ A different layout invalidates the hash,
 so resources should not change the chiclet layout.
 
 To account for variations in how chiclets are constructed,
-multiple hash values can be provided.
+content could be matched against one of a set of hash values.
 An entity can validate against a set of hashes
 by matching the hash of the first chiclet
 against any value from the provided set.
@@ -522,10 +529,10 @@ the collision resistance of SHA-256 is also relied on
 to prevent message substitution.
 
 This document does not define the use of an alternative hash function.
-In the event that attacks on SHA-256 are found,
-new labels can be defined in a new specification.
-The definition of those labels could reuse the construction in this document
-with a different hash function.
+If attacks on SHA-256 are considered an unacceptable risk,
+new codings and fields can be defined in a new specification.
+Whether those items reuse the construction in this document
+with a different hash function can be considered.
 
 
 ## Truncation {#truncation}
@@ -543,7 +550,7 @@ that the final chiclet is easily distinguished from any non-final chiclets.
 This ensures that truncation can be reliably detected.
 
 
-## Chiclet Size {#dos}
+## Chiclet Size Denial of Service {#dos}
 
 The requirement to hold an entire chiclet until it is validated
 creates a denial of service risk;
@@ -589,7 +596,24 @@ Reference:
 
 ## Chi-Digest Header Field
 
-TODO
+IANA is requested to add the following entry
+to the ["Hypertext Transfer Protocol (HTTP) Field Name Registry"](https://www.iana.org/assignments/http-fields/)
+established by {{Section 16.3.1 of HTTP}}:
+
+Field Name:
+: Chi-Digest
+
+Status:
+: permanent
+
+Structured Type:
+: List
+
+Reference:
+: {{chi-digest}} of this document
+
+Comments:
+: (none)
 
 --- back
 
@@ -597,4 +621,4 @@ TODO
 {:numbered="false"}
 
 {{{Jeffrey Yasskin}}} was a co-author on a previous iteration of this work.
-{{{Lucas Pardue}}} helped with the integration with digest fields.
+{{{Lucas Pardue}}} suggested the Chi-Digest field, rather than an integration with RFC 9530.
