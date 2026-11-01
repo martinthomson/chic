@@ -15,7 +15,7 @@ use chic::{
 use sha2::{Digest as _, Sha256};
 
 /// The chiclet content length that every implementation is required to support.
-const DEFAULT_CHICLET_SIZE: u64 = (1 << 14) - 1;
+const DEFAULT_CHICLET_SIZE: u64 = (1 << 16) - 1;
 
 fn sha256(parts: &[&[u8]]) -> Digest {
     let mut h = Sha256::new();

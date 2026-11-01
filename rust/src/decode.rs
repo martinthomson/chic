@@ -2,9 +2,6 @@ use sha2::{Digest as _, Sha256};
 
 use crate::{Digest, Error, HASH_LEN, MAX_CONTENT, MAX_FINAL_CONTENT, Result, varint};
 
-/// The largest chiclet length value that every implementation is required to support.
-const DEFAULT_MAX_LENGTH: u64 = (1 << 14) - 1;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum State {
     /// Reading a length field, with the bytes read so far.
@@ -41,10 +38,12 @@ pub struct Decoder {
 }
 
 impl Decoder {
+     /// The largest chiclet length value that every implementation is required to support.
+     pub const DEFAULT_MAX_LENGTH: u64 = (1 << 16) - 1;
+
     /// Create a decoder that validates against the hash of the first chiclet.
-    /// This decoder rejects chiclets with a length value greater than 16383,
-    /// the largest that every implementation is required to support
-    /// (a total chiclet size of 16417 bytes); see [`Decoder::with_max_length`].
+    /// This decoder rejects chiclets with a length value greater than the default
+    /// of [`Decoder::DEFAULT_MAX_LENGTH`]; see [`Decoder::with_max_length`].
     #[must_use]
     pub fn new(expected: Digest) -> Self {
         Self {
