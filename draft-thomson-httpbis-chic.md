@@ -101,7 +101,7 @@ Additional bytes for the hash and length fields
 are interspersed with content bytes.
 The relative cost of that overhead depends on the size of chiclets;
 a 4 KiB chiclet size adds overhead of 0.83%,
-whereas a 65535 byte chiclet adds overhead of 0.055%.
+whereas a 65535-byte chiclet adds overhead of 0.055%.
 Larger chiclets reduce overhead, but add latency;
 smaller chiclets can improve latency with higher overheads.
 
@@ -137,7 +137,7 @@ Content bytes are therefore interspersed with framing and integrity bytes.
 
 A non-final chiclet comprises a non-zero length (for framing),
 between 1 and 2<sup>61</sup>-41 bytes (inclusive) of content (see {{length}}),
-and a 32 byte hash (that is, integrity bytes).
+and a 32-byte hash (that is, integrity bytes).
 
 Lengths are encoded using the variable-length integer format
 from {{Section 16 of QUIC}}.
@@ -204,7 +204,7 @@ Without the chi digest,
 it is not possible to validate the integrity of the content.
 Content can still be processed by removing the length and hash bytes.
 
-The process for progressively validating and releasing content bytes,
+The process for progressively validating and releasing content bytes
 proceeds as follows,
 starting with an expected hash value set to the chi digest:
 
@@ -444,7 +444,7 @@ progressive validation cannot be performed.
 
 ## Example {#example}
 
-This example shows a 47 byte sequence split into chiclets of 16 bytes.
+This example shows a 47-byte sequence split into chiclets of 16 bytes.
 This chiclet size is far smaller than would be used in practice,
 but it allows the example to show multiple chiclets.
 The resulting 3 chiclets are shown in {{ex-chiclets}},
@@ -535,7 +535,7 @@ In general, integrity is only valuable if the chi digest comes from a source
 that also has integrity protection.
 A chi digest might be provided alongside a reference to a resource
 (such as with {{SRI}})
-or they might be signed
+or it might be signed
 (for instance, an HTTP Message Signature {{?HTTPSIG=RFC9421}}
 that covers a Chi-Digest field).
 

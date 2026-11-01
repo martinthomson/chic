@@ -296,6 +296,45 @@ fn decoder_limits() {
     assert_eq!(decode_slice(&enc, digest, 40).unwrap(), data);
 }
 
+/// `Decoder::new` accepts chiclets up to the size every receiver must support,
+/// for both non-final and final chiclets, and rejects anything larger.
+#[test]
+fn decoder_default_limit() {
+    const LIMIT: u64 = (1 << 16) - 1;
+    assert_eq!(Decoder::DEFAULT_MAX_LENGTH, LIMIT);
+
+    let decode = |enc: &[u8], digest: Digest| {
+        let mut decoder = Decoder::new(digest);
+        let mut out = Vec::new();
+        decoder
+            .feed(enc, &mut out)
+            .and_then(|()| decoder.finish(&mut out))
+            .map(|()| out)
+    };
+
+    let limit = usize::try_from(LIMIT).unwrap();
+    for (len, lengths, ok) in [
+        // A non-final chiclet at the limit, then a final chiclet at the limit.
+        (2 * limit, [LIMIT], true),
+        // A non-final chiclet one byte over the limit.
+        (limit + 2, [LIMIT + 1], false),
+        // A final chiclet one byte over the limit.
+        (2 * limit + 1, [LIMIT], false),
+    ] {
+        let data = content(len, 12);
+        let (enc, digest) = encode_slice(&data, lengths).unwrap();
+        let res = decode(&enc, digest);
+        if ok {
+            assert_eq!(res.unwrap(), data);
+        } else {
+            assert!(
+                matches!(res, Err(Error::ChicletTooLong)),
+                "{len} bytes with lengths {lengths:?}"
+            );
+        }
+    }
+}
+
 #[test]
 fn decoder_failed_state() {
     let (enc, digest) = encode_slice(b"hello world", [5]).unwrap();
