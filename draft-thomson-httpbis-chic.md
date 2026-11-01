@@ -52,17 +52,17 @@ Hashes are often the basis of digital signature schemes
 that can authenticate content,
 or at least provide verifiable proof of authorization.
 
-The main challenge with hashes is that the entirety of a piece of content
-needs to be acquired in order to validate the hash.
+The main challenge with hashes is that validating integrity
+requires every byte in the sequence.
 This document describes a method of hash generation
-that can be verified progressively.
+that can be verified incrementally.
 This enables systems that depend on progressive processing,
 such as streaming processing of a long sequence of records,
 or performance-sensitive applications like HTML rendering.
 
 The way this works is by splitting a document into chunks,
-or chiclets,
-each comprising
+called chiclets.
+Each chiclet comprises
 a length,
 some number of bytes of content, and
 a hash for the next chiclet.
@@ -87,7 +87,7 @@ The hash of the entirety of the content
 can thereby be represented by the hash of the first chiclet.
 
 This enables progressive processing of content,
-providing strong integrity for all content bytes,
+maintaining strong integrity for all content bytes,
 provided that each chiclet is only released after being validated;
 see {{consumption}}.
 That can reduce latency -- or at least perceived latency --
@@ -98,6 +98,8 @@ Additional bytes for the hash and length fields
 are interspersed with content bytes.
 The relative cost of that overhead depends on the size of chiclets;
 an average size of 4 KiB adds overhead of 0.83%.
+Larger chiclets reduce overhead, but add latency;
+smaller chiclets can improve latency with higher overheads.
 
 Constructing content in this form
 requires that the entirety of the content is available;
@@ -110,7 +112,7 @@ see {{construction}}.
 
 This document uses the varint encoding
 and presentation language
-developed for QUIC {{!QUIC=RFC9000}}.
+developed for QUIC {{Sections 16 and 1.3 of !QUIC=RFC9000}}.
 
 
 # Chained Hash Integrity Format {#format}
@@ -122,10 +124,8 @@ This format allows for progressive validation of the integrity of content.
 
 ## Format Description
 
-The format comprises zero or more non-final chiclets and a final chiclet
-(which can be the first).
-Content bytes are therefore interspersed with framing and integrity bytes,
-increasing the size of the content.
+The format comprises zero or more non-final chiclets and a final chiclet.
+Content bytes are therefore interspersed with framing and integrity bytes.
 
 A non-final chiclet comprises a non-zero length (for framing),
 between 1 and 2<sup>61</sup>-41 bytes (inclusive) of content (see {{length}}),
@@ -155,9 +155,10 @@ is not written to the output.
 This is the value that commits to the entire sequence of chiclets
 and the content that it protects.
 This value needs to be carried outside the content;
-see {{digest}} for one method of indicating this value.
+see {{chi-digest}} for one method of indicating this value.
 
-The format is illustrated in {{f-layout}}.
+The format is illustrated in {{f-layout}}
+using the notation from {{Section 1.3 of QUIC}}.
 
 ~~~
 Chic Content-Coding {
@@ -185,19 +186,18 @@ see {{hash}} for details.
 ## Consumption and Validation {#consumption}
 
 An entity that receives a stream of bytes in this format
-will need a hash value for the first chiclet
-in order to validate the content.
+can use the hash of the first chiclet to validate the content.
 That value might be provided via some alternative communication channel;
 one method for carrying this hash value in HTTP fields
-is defined in {{digest}}.
+is defined in {{chi-digest}}.
 
 Without the hash of the first chiclet,
 it is not possible to validate the integrity of the content.
 Content can still be processed by removing the length and hash bytes.
 
 The process for progressively validating and releasing content bytes
-starts with an expected hash value,
-then proceeds as follows:
+based on the hash of the first chiclet
+proceeds as follows:
 
 1. Initialize a new instance of SHA-256 {{!SHA2}}.
 
@@ -225,18 +225,23 @@ then proceeds as follows:
 This process ensures that released bytes are all integrity-protected,
 according to the value that was provided.
 
-To account for variations in how chiclets are constructed,
-multiple hash values might be provided.
-Though this is not possible with the Repr-Digest and Content-Digest fields
-(see {{digest}}),
-digest values might be provided via other means,
+The Chi-Digest field ({{chi-digest}}) provides only a single hash,
+but other mechanisms could be defined,
 such as a future extension to {{SRI}}.
-An entity that wishes to validate against any value
-from a set of provided hash values
-matches the hash of the first chiclet against the provided set.
+
+When hashes are obtained via means other than the Chi-Digest field,
+there is a risk that chiclet layout has changed.
+A different layout invalidates the hash,
+so resources should not change the chiclet layout.
+
+To account for variations in how chiclets are constructed,
+multiple hash values can be provided.
+An entity can validate against a set of hashes
+by matching the hash of the first chiclet
+against any value from the provided set.
 Once the first chiclet is processed,
 subsequent chiclets are validated against the single hash
-from the preceding chiclet.
+that was included in that first chiclet.
 
 
 ## Construction {#construction}
@@ -249,28 +254,29 @@ These chiclets are hashed,
 starting from the last,
 placing the resulting hash
 from each chiclet
-at the end of the immediately preceding chiclet.
+at the end of the chiclet that immediately precedes it;
+see {{f-layout}}.
 
 When constructing content,
 if the content is processed in a forward direction,
-chiclets might be written with placeholder values for hashes.
-Hashes cannot be added until all subsequent chiclets --
-and their hashes --
-are computed.
+chiclets might be written with placeholder values for each hash.
+Hashes can then be added in reverse order once the final chiclet is hashed.
 
 The construction of chiclets can operate on fixed-sized pieces,
 or application needs can drive how content is split.
 For instance, an image that can be displayed
 at progressively-higher levels of quality can have certain points at which
-significant quality improvements can be realized;
-aligning chiclets to those points might enable better incremental processing.
+significant quality improvements can be realized.
+Aligning chiclets to those points might enable better incremental processing.
+Similarly, a video file might have chiclets aligned to frame boundaries
+or significant features within frames.
 
-The fact that content needs to be processed in reverse order
+The fact that content needs to be produced in reverse order
 makes this format ill-suited to situations
 where content of arbitrary length is streamed.
 It is also poorly suited to use with dynamically-generated content,
 especially where content is latency sensitive,
-because it requires two processing passes to produce the format.
+because of the need for two processing passes.
 It is therefore best suited to static resources
 where the format can be pregenerated and saved.
 
@@ -278,7 +284,7 @@ where the format can be pregenerated and saved.
 ## Length Constraints {#length}
 
 An implementation that processes input needs to hold an entire chiclet
-in its memory before releasing it.
+in its memory before validating and releasing it.
 Implementations that accept untrusted inputs
 might refuse to support large chiclets
 to protect against memory exhaustion attacks.
@@ -292,28 +298,24 @@ Encoders MUST NOT generate larger chiclets
 unless support for larger values has been arranged.
 
 A receiver can validate that the length of a non-final chiclet
-is acceptable before reading further;
-the final chiclet does not have a length prefix,
+is acceptable before reading further.
+In contrast, the final chiclet does not have a length prefix,
 so receivers need to either rely on other length indicators
 (such as the HTTP Content-Length field)
-or abort when received bytes exceed the configured maximum.
+or abort when received bytes exceed their configured maximum.
 
 The absolute maximum length of a chiclet is determined by the length encoding in SHA-2,
 which is expressed in bits as a 64-bit value.
 Consequently, the maximum length is 2<sup>61</sup>-1 bytes,
-less overheads.
+less overheads of 40 bytes for a non-final chiclet
+and up to 8 bytes for a final chiclet (though this can be a single byte).
 This is less than the 2<sup>62</sup>-1 length that could otherwise
 be expressed in a QUIC variable-length integer.
-For a chiclet of that size, the length and hash further reduce
-the available content length
-by an additional 40 bytes to 2<sup>61</sup>-41;
-the final chiclet carries only a zero-valued length,
-which could be one, two, four, or eight bytes long.
 Of course, there is little value in having such large chiclets,
 which directly act against the goal of incremental processing.
 
 An abusive implementation might also seek to generate wasteful work
-on recipients
+for recipients
 by constructing many small chiclets.
 While small chiclets might be necessary for some applications,
 very small lengths can add significant amounts of overhead.
@@ -328,17 +330,16 @@ The use of progressive validation
 is well-suited to HTTP applications {{!HTTP=RFC9110}} that rely
 on the streaming and incremental processing of message content.
 
-A content-coding is defined to describe content that can be progressively decoded;
+A content-coding is defined enable progressive decoding while maintaining integrity;
 see {{coding}}.
-A digest format is defined to allow the hash of the first chiclet
-to be signaled;
-see {{digest}}.
+A header field is defined to carry the hash of the first chiclet;
+see {{chi-digest}}.
 
 
 ## Content-Coding {#coding}
 
-The `chi` content coding indicates that the content of the message
-is a sequence of chiclets,
+The `chi` content coding indicates that the representation
+is encoded as a sequence of chiclets,
 following the construction defined in {{format}}.
 Encoding follows the guidance in {{construction}};
 decoding follows the procedure in {{consumption}}.
@@ -359,50 +360,61 @@ at their discretion.
 Adding the coding requires buffering of much of the message
 before the hash for any non-final chiclet can be sent;
 see {{construction}}.
-Removal invalidates any digest field; see {{digest}}.
+Intermediaries MUST update any Chi-Digest field
+when adding or removing `chi` codings; see {{chi-digest}}.
 
-The `chi` content coding applies to the entirety of a message,
-so it is unlikely to be useful in combination with range requests
+Like other content codings,
+the `chi` content coding applies to the entirety of a representation,
+so it is less useful in combination with range requests
 ({{Section 14 of HTTP}}).
+A client could still benefit from the use of the coding
+for a series of range requests if they are contiguous
+with the first byte of the representation.
 
 
-## Digest Format {#digest}
+## Chi-Digest Field {#chi-digest}
 
-The `chi` hash algorithm label
-identifies the use of the format described in {{format}}
-when carried in the Content-Digest or Repr-Digest fields
-that are defined in {{!DIGEST=RFC9530}}.
+The Chi-Digest field is a `sf-list` header field;
+see {{Section 3.1 of !FIELDS=RFC9651}}.
+Each list item is a byte sequence;
+see {{Section 3.3.5 of !FIELDS}}.
 
-The `chi` digest format is only useful in combination
-with a very specific `chi` content-coding; see {{coding}}.
-Any change to the length of chiclets in that coding
-will invalidate the value of the digest format.
-This also means that use with Repr-Digest might not be useful
-if the length of chiclets could change
-between different encodings of the same representation.
+This field carries only `chi` digests,
+each value being 32 bytes.
+Values with other types or lengths MUST be treated as errors,
+causing the entire field value to be ignored,
+as recommented by {{Section 2.2 of FIELDS}}.
+No semantics are defined for parameters,
+which MUST be ignored on receipt,
+as recommented by {{Section 2.3 of FIELDS}}.
 
-Values in Content-Digest and Repr-Digest
-apply to the message after the application of all content codings.
-This means that a `chi` digest MUST only be included in those fields
-if the `chi` content coding is the last coding applied.
-Other ways of conveying the digest do not have this limitation.
+Each digest in the Chi-Digest field corresponds to a `chi` content coding
+in the order that they are applied
+(this follows the same rule as content codings; see {{Section 8.4 of HTTP}}).
+That means that a recipient uses the last Chi-Digest value
+when removing the outermost `chi` coding.
 
-Note also that only the last digest value of a given type
-is visible to a recipient of these fields;
-see {{Section 4.2.2 of ?RFC9651}}.
+Use of the Chi-Digest field is not mandatory
+when using the `chi` content coding.
+However, if the Chi-Digest field is present
+when adding an additional `chi` content coding,
+the field MUST either be removed or have a value added.
+This prevents existing values from being invalidated.
 
-The value associated with the `chi` hash algorithm is a 32-byte binary value,
-represented as a structured field Byte Sequence;
-see {{Sections 2 and 3 of DIGEST}} for details.
+This field offers no means of negotiating different hash algorithms;
+see {{hash}}.
 
-The `chi` hash algorithm value can only be used
-during the removal of the `chi` content coding,
-which provides strong integrity based on the digest value.
+The Chi-Digest field can be carried in a trailer field,
+but this is strictly worse than a Repr-Digest field
+with a `sha-256` digest,
+as defined in {{?DIGEST=RFC9530}}.
+In comparison, the `chi` coding only adds overhead
+when its ability to incrementally validate integrity cannot be used.
 
 
 ## Example {#example}
 
-This example shows content of 47 bytes, split into chiclets of 16 bytes.
+This example shows a 47 byte sequence split into chiclets of 16 bytes.
 This chiclet size is far smaller than would be used in practice,
 but it allows the example to show multiple chiclets.
 The resulting 3 chiclets are shown in {{ex-chiclets}},
@@ -438,15 +450,15 @@ Chiclet 1:
 ~~~
 {: #ex-chiclets title="Example Chiclets"}
 
-The hash of the first chiclet can be carried in the Content-Digest field,
-as shown in the HTTP response in {{ex-response}}.
+The hash of the first chiclet can be carried in a Chi-Digest field,
+as shown in {{ex-response}}.
 
 ~~~ http-message
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Content-Encoding: chi
 Content-Length: 114
-Content-Digest: chi=:47sBvLi6qNCQEPsoZrc9J9j/QIq3SnvHKvEr5EZPlNc=:
+Chi-Digest: :47sBvLi6qNCQEPsoZrc9J9j/QIq3SnvHKvEr5EZPlNc=:
 ~~~
 {: #ex-response title="Example Response Header"}
 
@@ -468,13 +480,13 @@ aa25474f ff11f6a8 9efb6e6d 4ff7fe84
 
 Empty content is encoded as a single final chiclet,
 comprising a single byte with a value of 0.
-The `chi` digest of empty content is therefore the SHA-256 hash
+The `chi` digest of a zero-length sequence is therefore the SHA-256 hash
 of that one byte, as shown in {{ex-empty}}.
 
 ~~~ http-message
 Content-Encoding: chi
 Content-Length: 1
-Content-Digest: chi=:bjQLnP+zepicpUTmu3gKLHiQHT+zNzh2hRGjBhevoB0=:
+Chi-Digest: :bjQLnP+zepicpUTmu3gKLHiQHT+zNzh2hRGjBhevoB0=:
 ~~~
 {: #ex-empty title="Fields for Empty Content"}
 
@@ -498,10 +510,12 @@ Finally, the digest value produced is not canonical ({{non-canon}}).
 
 ## Hash Choice {#hash}
 
-This document relies on the second pre-image resistance property of SHA-256 {{!SHA2}}.
-If a recipient holds a SHA-256 hash for some content,
+Integrity protection relies on the second pre-image resistance
+property of SHA-256 {{!SHA2}}.
+If a recipient holds a chained hash integrity hash,
 an attacker that wishes to substitute content
-needs to find a second plaintext that will produce the same hash.
+needs to find a second sequence if chiclets
+that will produce the same hash.
 
 If the digest is subsequently signed,
 the collision resistance of SHA-256 is also relied on
@@ -517,15 +531,16 @@ with a different hash function.
 ## Truncation {#truncation}
 
 The use of a streaming format means that
-content might be released to an application for processing,
-with no guarantee that subsequent chiclets will be delivered.
+data might be released to an application for processing,
+with no guarantee that subsequent chiclets will be delivered intact.
 Any application that uses this format
-therefore needs to be robust in the event that content is truncated.
+therefore needs to be robust in the event that its input is truncated.
 
 The final chiclet contains a zero-valued length prefix.
 The prefix of every chiclet is hashed,
 so a value of zero ensures
 that the final chiclet is easily distinguished from any non-final chiclets.
+This ensures that truncation can be reliably detected.
 
 
 ## Chiclet Size {#dos}
@@ -540,13 +555,20 @@ see {{length}} for discussion and mitigations.
 The same sequence of bytes can produce many different integrity values.
 As a result, the hash of the first chiclet cannot act
 as a canonical identifier for content.
+
 Each digest value commits to a specific sequence of chiclets,
 so cannot be used with a different arrangement of chiclet lengths.
+Receivers can accept one of a set of values
+to safeguard against chiclet layout changes.
+This increases the chance of a collision or pre-image attack
+by a negligible amount for each additional accepted hash.
 
 
 # IANA Considerations
 
-This document registers a content coding and a hash algorithm for HTTP digest fields.
+This document registers
+a `chi` content coding
+and a header field for carrying `chi` digests.
 
 
 ## Content Coding
@@ -565,24 +587,9 @@ Reference:
 : {{coding}} of this document
 
 
-## Digest Hash Algorithm
+## Chi-Digest Header Field
 
-IANA is requested to add the following entry
-to the ["Hash Algorithms for HTTP Digest Fields" registry](https://www.iana.org/assignments/http-digest-hash-alg/)
-established by {{Section 7.2 of DIGEST}}:
-
-Algorithm Key:
-: chi
-
-Status:
-: Active
-
-Description:
-: The SHA-256 hash of the first chiclet of the `chi` content coding
-
-Reference:
-: {{digest}} of this document
-
+TODO
 
 --- back
 
@@ -590,3 +597,4 @@ Reference:
 {:numbered="false"}
 
 {{{Jeffrey Yasskin}}} was a co-author on a previous iteration of this work.
+{{{Lucas Pardue}}} helped with the integration with digest fields.
