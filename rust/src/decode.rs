@@ -38,8 +38,8 @@ pub struct Decoder {
 }
 
 impl Decoder {
-     /// The largest chiclet length value that every implementation is required to support.
-     pub const DEFAULT_MAX_LENGTH: u64 = (1 << 16) - 1;
+    /// The largest chiclet length value that every implementation is required to support.
+    pub const DEFAULT_MAX_LENGTH: u64 = (1 << 16) - 1;
 
     /// Create a decoder that validates against the hash of the first chiclet.
     /// This decoder rejects chiclets with a length value greater than the default
@@ -48,7 +48,7 @@ impl Decoder {
     pub fn new(expected: Digest) -> Self {
         Self {
             expected,
-            max_length: DEFAULT_MAX_LENGTH,
+            max_length: Self::DEFAULT_MAX_LENGTH,
             state: State::START,
             hasher: Sha256::new(),
             buf: Vec::new(),

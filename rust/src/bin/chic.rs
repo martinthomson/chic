@@ -10,7 +10,7 @@ use std::{
 use chic::{Decoder, Digest, sync};
 
 /// The chiclet content length that every implementation is required to support.
-const DEFAULT_CHICLET_SIZE: u64 = (1 << 14) - 1;
+const DEFAULT_CHICLET_SIZE: u64 = (1 << 16) - 1;
 
 const USAGE: &str = "\
 usage: chic encode [--size N | --lengths A,B,...] FILE   (digest is printed to stderr)

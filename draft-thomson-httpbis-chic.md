@@ -39,7 +39,7 @@ informative:
 
 --- abstract
 
-This document defines a content-coding for HTTP that provides strong integrity protection
+This document defines a content coding for HTTP that provides strong integrity protection
 while maintaining the ability to perform some progressive processing.
 
 
@@ -84,8 +84,8 @@ This is shown in {{f-overview}}.
 {: #f-overview title="Overview of Format"}
 
 The hash of the entirety of the content
-can thereby be represented by the hash of the first chiclet;
-this will be called a chi digest.
+can thereby be represented by the hash of the first chiclet,
+or chi digest.
 
 This enables progressive processing of content,
 maintaining strong integrity for all content bytes,
@@ -101,7 +101,7 @@ Additional bytes for the hash and length fields
 are interspersed with content bytes.
 The relative cost of that overhead depends on the size of chiclets;
 a 4 KiB chiclet size adds overhead of 0.83%,
-whereas a 64 KiB chiclet adds overhead of 0.055%.
+whereas a 65535 byte chiclet adds overhead of 0.055%.
 Larger chiclets reduce overhead, but add latency;
 smaller chiclets can improve latency with higher overheads.
 
@@ -115,6 +115,9 @@ see {{construction}}.
 
 {::boilerplate bcp14-tagged}
 
+The term "chi digest" refers to the hash of the first chiclet
+in the format defined in {{format}}.
+
 This document uses the varint encoding
 and presentation language
 developed for QUIC {{Sections 16 and 1.3 of !QUIC=RFC9000}}.
@@ -127,7 +130,7 @@ a stream of variable-length chiclets.
 This format allows for progressive validation of the integrity of content.
 
 
-## Format Description
+## Format Definition
 
 The format comprises zero or more non-final chiclets and a final chiclet.
 Content bytes are therefore interspersed with framing and integrity bytes.
@@ -167,7 +170,7 @@ The format is illustrated in {{f-layout}}
 using the notation from {{Section 1.3 of QUIC}}.
 
 ~~~
-Chic Content-Coding {
+Chained Hash Integrity Format {
   Chiclet (..) ...,
   Final Chiclet (..),
 }
@@ -183,7 +186,7 @@ Final Chiclet {
   Content (..),
 }
 ~~~
-{: #f-layout title="Layout of Content Encoding"}
+{: #f-layout title="Chained Hash Integrity Format"}
 
 The format uses SHA-256 for integrity {{!SHA2}};
 see {{hash}} for details.
@@ -192,7 +195,7 @@ see {{hash}} for details.
 ## Consumption and Validation {#consumption}
 
 An entity that receives a stream of bytes in this format
-can use the hash of the first chiclet to validate the content.
+can use the chi digest to validate the content.
 That value might be provided via some alternative communication channel;
 one method for carrying this hash value in HTTP fields
 is defined in {{chi-digest}}.
@@ -201,9 +204,9 @@ Without the chi digest,
 it is not possible to validate the integrity of the content.
 Content can still be processed by removing the length and hash bytes.
 
-The process for progressively validating and releasing content bytes
-set an expected hash value to a chi digest and
-proceed as follows:
+The process for progressively validating and releasing content bytes,
+proceeds as follows,
+starting with an expected hash value set to the chi digest:
 
 1. Initialize a new instance of SHA-256 {{!SHA2}}.
 
@@ -307,16 +310,15 @@ The total size of chiclets will be larger as they also contain
 a length field of up to 8 bytes
 and non-final chiclets include a 32-byte hash.
 Encoders MUST NOT generate larger chiclets
-unless support for larger values has been arranged.
+without knowing, by means outside of this specification,
+that the receiver supports the size it uses.
 
-Receivers can support larger than the 65535 minimum,
-so no specific action is required if larger chiclets are received.
-Receiving a chiclet larger than what the receiver supports
-simply causes decoding to fail.
+Receivers can support chiclets larger than the 65535-byte minimum.
+A chiclet larger than the supported maximum results in a decode error.
 
 A receiver can validate that the length of a non-final chiclet
 is acceptable before reading further.
-In contrast, the final chiclet has zero-valued length prefix,
+In contrast, the final chiclet has a zero-valued length prefix,
 so receivers need to either rely on other length indicators
 (such as the HTTP Content-Length field)
 or abort when received bytes exceed their configured maximum.
@@ -347,13 +349,14 @@ The use of progressive validation
 is well-suited to HTTP applications {{!HTTP=RFC9110}} that rely
 on the streaming and incremental processing of message content.
 
-A content-coding is defined enable progressive decoding while maintaining integrity;
+A content coding is defined to enable progressive decoding
+while maintaining integrity;
 see {{coding}}.
 A header field is defined to carry a chi digest;
 see {{chi-digest}}.
 
 
-## Content-Coding {#coding}
+## Content Coding {#coding}
 
 The `chi` content coding indicates that the representation
 is encoded as a sequence of chiclets,
@@ -393,7 +396,8 @@ can be applied in combination with `chi` in any order.
 Applying integrity after compression
 ensures that invalid content does not need to be decompressed;
 whereas applying integrity before compression
-allows compression to be negotiated without need fresh integrity values.
+allows compression to be negotiated
+without needing fresh integrity values.
 
 
 ## Chi-Digest Field {#chi-digest}
@@ -410,7 +414,7 @@ causing the entire field value to be ignored,
 as recommended by {{Section 2.2 of FIELDS}}.
 No semantics are defined for parameters,
 which MUST be ignored on receipt,
-as recommented by {{Section 2.3 of FIELDS}}.
+as recommended by {{Section 2.3 of FIELDS}}.
 
 Each digest in the Chi-Digest field corresponds to a `chi` content coding
 in the order that they are applied
@@ -434,8 +438,7 @@ The Chi-Digest field can be carried in a trailer field,
 but this is strictly worse than a Repr-Digest field
 with a `sha-256` digest,
 as defined in {{?DIGEST=RFC9530}}.
-In comparison, if the chi digest
-is only delivered in a trailer,
+If the chi digest is only delivered in a trailer,
 progressive validation cannot be performed.
 
 
@@ -530,9 +533,11 @@ However, there are subtle differences that need to be noted.
 
 In general, integrity is only valuable if the chi digest comes from a source
 that also has integrity protection.
-Integrity for external sources therefore depends on the integrity of those sources.
-A signature over the value included in a Chi-Digest field might provide integrity;
-see {{?HTTPSIG=RFC9421}}.
+A chi digest might be provided alongside a reference to a resource
+(such as with {{SRI}})
+or they might be signed
+(for instance, an HTTP Message Signature {{?HTTPSIG=RFC9421}}
+that covers a Chi-Digest field).
 
 The integrity property depends on the hash function chosen ({{hash}}).
 Recipients are exposed to a risk of message truncation ({{truncation}}).
@@ -593,8 +598,8 @@ Each digest value commits to a specific sequence of chiclets,
 so cannot be used with a different arrangement of chiclet lengths.
 Accepting one of a set of values
 to safeguard against chiclet layout changes
-increases the chance of a collision or pre-image attack
-by a negligible amount for each additional accepted chi digest.
+increases the chance of a pre-image attack
+by a negligible amount for each accepted chi digest.
 
 
 # IANA Considerations {#iana}
@@ -614,7 +619,7 @@ Name:
 : chi
 
 Description:
-: ChainedH ash Integrity Coding
+: Chained Hash Integrity Coding
 
 Reference:
 : {{coding}} of this document
