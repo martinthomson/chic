@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-01T04:59:50.302721+00:00",
+  "timestamp": "2026-11-03T05:49:26.528150+00:00",
   "repo": "martinthomson/chic",
   "labels": [
     {
@@ -49,6 +49,31 @@
       "color": "ffffff"
     }
   ],
-  "issues": [],
+  "issues": [
+    {
+      "number": 1,
+      "id": "I_kwDOOlKuYM8AAAABbmXaIw",
+      "title": "Consider raising the chiclet size requirement",
+      "url": "https://github.com/martinthomson/chic/issues/1",
+      "state": "OPEN",
+      "author": "martinthomson",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "Right now, this is 16383 bytes, which could be too small for applications that involve larger numbers of bytes.  Though larger chiclets increase latency, they reduce the relative size of overheads and could improve throughput.  The cost is an increase in memory commitment, which makes the format less viable for constrained implementations.",
+      "createdAt": "2026-11-01T12:56:17Z",
+      "updatedAt": "2026-11-01T17:15:44Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "martinthomson",
+          "authorAssociation": "OWNER",
+          "body": "I've bumped this to 64 KiB (minus one).  Let's keep this open though.",
+          "createdAt": "2026-11-01T17:15:43Z",
+          "updatedAt": "2026-11-01T17:15:43Z"
+        }
+      ]
+    }
+  ],
   "pulls": []
 }
